@@ -1,0 +1,13 @@
+{
+  "files.eol": "\n",
+  "files.exclude": {
+    "**/.venv": true,
+    "**/node_modules": true,
+    "**/__pycache__": true,
+    "dist": true
+  },
+  "liveshare.allowGuestDebugControl": false,
+  "liveshare.allowGuestTaskControl": false,
+  "liveshare.autoShareServers": true,
+  "liveshare.publishWorkspaceInfo": false
+}
