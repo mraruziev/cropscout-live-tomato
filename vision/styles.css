@@ -2785,3 +2785,39 @@ a:focus-visible {
 .live-spray.is-none strong { color: var(--green-bright); }
 .live-spray.is-remove { border-left-color: var(--danger); }
 .live-spray.is-remove strong { color: var(--danger); }
+
+/* Static (phone) build only: live readouts in a panel under the camera square (see app.js),
+   so nothing covers the video. The PHP site never has data-mode="static". */
+@media (max-width: 700px) {
+    html[data-mode="static"] .live-readouts {
+        width: min(100%, 32rem, 62dvh);
+        margin: 0.6rem auto 0;
+        display: grid;
+        gap: 0.45rem;
+    }
+
+    html[data-mode="static"] .live-readouts[hidden] {
+        display: none;
+    }
+
+    html[data-mode="static"] .live-readouts .live-recognition,
+    html[data-mode="static"] .live-readouts .live-spray {
+        max-width: none;
+        position: static;
+        box-shadow: none;
+        backdrop-filter: none;
+        background: var(--surface-soft);
+    }
+
+    html[data-mode="static"] .live-readouts .live-recognition strong {
+        white-space: normal;
+    }
+
+    html[data-mode="static"] .camera-guide span {
+        display: none;
+    }
+
+    html[data-mode="static"] .camera-status {
+        margin-top: 0.5rem;
+    }
+}

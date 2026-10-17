@@ -191,6 +191,25 @@ const elements = {
     fieldNoteStatus: document.querySelector('#field-note-status'),
 };
 
+// Static (phone) build only: on narrow screens the live readouts sit in a panel under the
+// camera square instead of on top of the video. The PHP site and wide screens keep the overlay.
+if (STATIC_MODE && elements.liveRecognition && elements.liveSpray) {
+    const cameraView = elements.liveRecognition.parentElement;
+    const readouts = document.createElement('div');
+    readouts.className = 'live-readouts';
+    cameraView.after(readouts);
+    const phoneLayout = window.matchMedia('(max-width: 700px)');
+    const placeReadouts = () => {
+        const target = phoneLayout.matches ? readouts : cameraView;
+        const anchor = phoneLayout.matches ? null : cameraView.querySelector('.camera-guide');
+        target.insertBefore(elements.liveRecognition, anchor);
+        target.insertBefore(elements.liveSpray, anchor);
+        readouts.hidden = !phoneLayout.matches;
+    };
+    placeReadouts();
+    phoneLayout.addEventListener('change', placeReadouts);
+}
+
 class VisionError extends Error {
     constructor(code, message) {
         super(message);
