@@ -26,6 +26,18 @@ scripts\serve.cmd                                   REM http://localhost:8080/vi
 
 On a phone the camera needs HTTPS, so open the deployed site or tunnel your local server.
 
+### Without PHP (static build)
+
+The screening itself never touches the server, so the page can also run as plain files. `tools/build_static.py` writes `dist/static/` with `index.html`, the app, the ONNX runtime and the models under `models/`; the page then reads the models from there instead of `model.php`, and the field-notes panel (which needs the PHP backend) is hidden. The models behave identically.
+
+```bash
+scripts/build-static.sh --serve        # macOS/Linux: build, then serve http://localhost:8081/
+scripts\build-static.cmd               # Windows: build (add --models C:\path\to\onnx if they are not in vision\private)
+scripts\serve-static.cmd               # Windows: serve http://localhost:8081/
+```
+
+Any static host works for the result (the camera still needs HTTPS or localhost). Field notes and the team review page exist only in the PHP deployment.
+
 ## How it works
 
 ```

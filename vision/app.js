@@ -1,15 +1,21 @@
 import * as ort from './vendor/ort.wasm.bundle.min.mjs';
 
+// Static mode (<html data-mode="static">, produced by tools/build_static.py): no PHP.
+// The models and their metadata are plain files under models/, and the field-note
+// backend does not exist. Everything the models do is identical in both modes.
+const STATIC_MODE = document.documentElement.dataset.mode === 'static';
+const modelUrl = (alias, file) => (STATIC_MODE ? `models/${file}` : `model.php?model=${alias}`);
+
 const MODEL_ENDPOINTS = Object.freeze({
-    cropView: 'model.php?model=crop-view',
-    disease: 'model.php?model=disease',
+    cropView: modelUrl('crop-view', 'cropscout-crop-view.onnx'),
+    disease: modelUrl('disease', 'cropscout-disease.onnx'),
 });
 
-const METADATA_ENDPOINT = 'model.php?model=metadata';
+const METADATA_ENDPOINT = modelUrl('metadata', 'model-metadata.json');
 const SPECIALIST_ENDPOINTS = Object.freeze({
-    'cucumber-leaf': 'model.php?model=cucumber-leaf',
-    'lemon-leaf': 'model.php?model=lemon-leaf',
-    'tomato-leaf': 'model.php?model=tomato-leaf',
+    'cucumber-leaf': modelUrl('cucumber-leaf', 'cropscout-cucumber-leaf.onnx'),
+    'lemon-leaf': modelUrl('lemon-leaf', 'cropscout-lemon-leaf.onnx'),
+    'tomato-leaf': modelUrl('tomato-leaf', 'cropscout-tomato-leaf.onnx'),
 });
 const SPECIALIST_FAMILIES = Object.freeze({
     'cucumber-leaf': 'Cucumber_leaf',
@@ -42,7 +48,7 @@ const LIVE_VOTES_TO_SHOW = 3;
 const LIVE_VOTES_TO_HOLD = 2;
 // Leaf finder (feature flag): open the page with ?detector=1. It also needs a
 // leaf_detector entry in the release metadata.
-const LEAF_FINDER_ENDPOINT = 'model.php?model=leaf-detector';
+const LEAF_FINDER_ENDPOINT = modelUrl('leaf-detector', 'cropscout-leaf-detector.onnx');
 const LEAF_FINDER_REQUESTED = new URLSearchParams(window.location.search).get('detector') === '1';
 // A detected leaf keeps its track while its box overlaps last frame's box by
 // at least this much, and loses it after this many frames in a row unseen.
@@ -1762,15 +1768,17 @@ async function fetchProtectedModel(url, label, expectedSha256 = null) {
     });
     const contentType = (response.headers.get('content-type') || '').toLowerCase();
 
-    if (response.redirected || contentType.includes('text/html')) {
-        throw new VisionError('model', 'The public model endpoint returned a web page instead of model data. Reload, or ask the site owner to check the deployment.');
-    }
+    // A failed status first: a static host answers a missing file with an HTML 404 page,
+    // and "HTTP 404" says more than "returned a web page".
     if (!response.ok) {
-        const detail = await responseExcerpt(response);
+        const detail = contentType.includes('text/html') ? '' : await responseExcerpt(response);
         throw new VisionError(
             'model',
             detail || `${label} could not be loaded (HTTP ${response.status}).`
         );
+    }
+    if (response.redirected || contentType.includes('text/html')) {
+        throw new VisionError('model', 'The public model endpoint returned a web page instead of model data. Reload, or ask the site owner to check the deployment.');
     }
     if (!contentType.includes('application/octet-stream')) {
         throw new VisionError('model', `${label} returned the wrong content type: ${contentType || 'unknown'}.`);
@@ -2747,7 +2755,8 @@ const FIELD_NOTE_ENDPOINT = 'feedback.php';
 const FIELD_NOTE_STORAGE_KEY = 'cropscout.fieldNotes.v1';
 const FIELD_NOTE_STORAGE_LIMIT = 200;
 const FIELD_NOTE_MATCH_DISTANCE = 6;
-const fieldNoteAvailable = Boolean(elements.fieldNote && elements.fieldNoteForm);
+// No field notes in static mode: there is no server to keep them.
+const fieldNoteAvailable = Boolean(elements.fieldNote && elements.fieldNoteForm) && !STATIC_MODE;
 let fieldNoteOptions = null;
 let fieldNoteOptionsPromise = null;
 let currentAnalysis = null;

@@ -9,7 +9,6 @@ $scriptHash = @hash_file('sha256', __DIR__ . '/app.js');
 $styleVersion = is_string($styleHash) ? substr($styleHash, 0, 12) : '25';
 $scriptVersion = is_string($scriptHash) ? substr($scriptHash, 0, 12) : '25';
 header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
-$detectorOn = isset($_GET['detector']) && $_GET['detector'] === '1';
 ?><!doctype html>
 <html lang="en">
 <head>
@@ -39,7 +38,7 @@ $detectorOn = isset($_GET['detector']) && $_GET['detector'] === '1';
         <dl class="sys-readout" aria-label="Subsystem telemetry">
             <div><dt>Module</dt><dd>VIS-CAM 01</dd></div>
             <div><dt>Runtime</dt><dd>ORT-web · WASM · 1T</dd></div>
-            <div><dt>Mode</dt><dd id="hud-mode"><?= $detectorOn ? 'LEAF FINDER' : 'SQUARE' ?></dd></div>
+            <div><dt>Mode</dt><dd id="hud-mode">SQUARE</dd></div>
             <div><dt>Frames</dt><dd id="hud-frames">0</dd></div>
             <div><dt>Infer</dt><dd id="hud-ms">— ms</dd></div>
         </dl>
@@ -67,8 +66,8 @@ $detectorOn = isset($_GET['detector']) && $_GET['detector'] === '1';
                 <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="m4 16 4.5-4.5 3.5 3.5 2.5-2.5L20 18"/><circle cx="15.5" cy="9.5" r="1.4"/></svg>
                 Analyse a still
             </button>
-            <a class="hero-flag" href="?detector=<?= $detectorOn ? '0' : '1' ?>">
-                <?= $detectorOn ? 'Leaf finder: ON' : 'Leaf finder: OFF' ?> <span aria-hidden="true">·</span> toggle
+            <a class="hero-flag" id="leaf-finder-toggle" href="?detector=1">
+                <span id="leaf-finder-state">Leaf finder: OFF</span> <span aria-hidden="true">·</span> toggle
             </a>
         </div>
         <p class="hero-note">Screening support, not a laboratory diagnosis or a spray recommendation. Confirm uncertain or severe symptoms with an agronomist before treating.</p>
@@ -469,6 +468,14 @@ const hud = {
     camMs: document.getElementById('hud-cam-ms'),
 };
 const detectorRequested = new URLSearchParams(window.location.search).get('detector') === '1';
+// The leaf finder flag lives in the URL, so the toggle and the mode readout are set here,
+// not on the server: the same page works as PHP and as a static build.
+const toggle = document.getElementById('leaf-finder-toggle');
+if (toggle) {
+    toggle.href = detectorRequested ? '?' : '?detector=1';
+    document.getElementById('leaf-finder-state').textContent = detectorRequested ? 'Leaf finder: ON' : 'Leaf finder: OFF';
+}
+if (hud.mode && detectorRequested) hud.mode.textContent = 'LEAF FINDER';
 function tick() {
     const api = window.CropScoutVision;
     if (api && typeof api.liveStats === 'function') {
