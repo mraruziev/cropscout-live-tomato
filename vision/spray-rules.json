@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "title": "CropSCOUT spray estimate rules",
+  "notice": "HACKATHON PLACEHOLDER RATES. The dose_ml values are illustrative defaults for a hand sprayer, not label rates. Before any real use, replace them with the registered label rate of the actual product for tomato in your region, and keep the agronomist confirmation step. A spray estimate is shown only when the condition passed every CropSCOUT safeguard. Healthy leaves and non-infectious disorders get no spray.",
+  "units": {
+    "dose": "mL of mixed spray per plant",
+    "pump_ml_per_second": 10,
+    "max_dose_ml": 56,
+    "max_dose_note": "100 % spray = max_dose_ml (the largest dose_ml x the high-severity multiplier). percent = dose / max_dose_ml.",
+    "pump_note": "pump_ml_per_second converts the dose into a sprayer run time; measure your pump and change it."
+  },
+  "severity": {
+    "method": "share of leaf pixels that look like lesions (brown, yellow or dark necrotic) in the analysed square; see docs/spray-estimate.md",
+    "min_leaf_cover": 0.15,
+    "low_max": 0.10,
+    "high_min": 0.30,
+    "multipliers": { "low": 0.6, "medium": 1.0, "high": 1.4, "unknown": 1.0 }
+  },
+  "actions": {
+    "none": "No spray.",
+    "spray": "Spray the estimated dose on this plant.",
+    "remove": "Do not spray this plant; remove it. Spraying does not cure a virus."
+  },
+  "default": { "action": "none", "reason": "No rule for this condition, so no spray is estimated." },
+  "rules": {
+    "Tomato_leaf_healthy":                 { "action": "none",  "reason": "Healthy leaf: nothing to treat." },
+    "Tomato_fruit_healthy":                { "action": "none",  "reason": "Healthy fruit: nothing to treat." },
+
+    "Tomato_leaf_early_blight":            { "action": "spray", "product": "protectant fungicide", "dose_ml": 30, "interval_days": 7 },
+    "Tomato_leaf_late_blight":             { "action": "spray", "product": "late-blight fungicide (oomycete-active)", "dose_ml": 40, "interval_days": 5, "note": "Urgent: also treat neighbouring plants that still look clean." },
+    "Tomato_leaf_septoria_leaf_spot":      { "action": "spray", "product": "protectant fungicide", "dose_ml": 30, "interval_days": 7 },
+    "Tomato_leaf_leaf_mold":               { "action": "spray", "product": "fungicide approved for leaf mold", "dose_ml": 25, "interval_days": 7, "note": "Ventilation and lower humidity matter as much as the spray." },
+    "Tomato_leaf_target_spot":             { "action": "spray", "product": "protectant fungicide", "dose_ml": 30, "interval_days": 7 },
+    "Tomato_leaf_black_spot":              { "action": "spray", "product": "protectant fungicide", "dose_ml": 30, "interval_days": 7 },
+    "Tomato_leaf_bacterial_spot":          { "action": "spray", "product": "copper-based bactericide", "dose_ml": 30, "interval_days": 7, "note": "Copper protects clean tissue only; it does not cure existing spots." },
+    "Tomato_leaf_two_spotted_spider_mite": { "action": "spray", "product": "horticultural oil or miticide", "dose_ml": 25, "interval_days": 5, "note": "Cover the undersides of the leaves." },
+    "Tomato_leaf_pest_damage":             { "action": "spray", "product": "horticultural oil or miticide", "dose_ml": 25, "interval_days": 5, "note": "Confirm live mites with a hand lens first." },
+
+    "Tomato_leaf_yellow_leaf_curl_virus":  { "action": "remove", "reason": "Virus: no spray cures it. Remove the plant and control whiteflies separately." },
+    "Tomato_leaf_tomato_mosaic_virus":     { "action": "remove", "reason": "Virus: no spray cures it. Remove the plant and disinfect tools." },
+    "Tomato_leaf_mosaic_virus":            { "action": "remove", "reason": "Virus: no spray cures it. Remove the plant and disinfect tools." },
+    "Tomato_fruit_spotted_wilt_virus":     { "action": "remove", "reason": "Virus: no spray cures it. Remove the plant and control thrips separately." },
+
+    "Tomato_fruit_anthracnose":            { "action": "spray", "product": "protectant fungicide", "dose_ml": 30, "interval_days": 7 },
+    "Tomato_fruit_late_blight":            { "action": "spray", "product": "late-blight fungicide (oomycete-active)", "dose_ml": 40, "interval_days": 5 },
+    "Tomato_fruit_mold":                   { "action": "spray", "product": "fungicide approved for grey mould", "dose_ml": 25, "interval_days": 7 },
+    "Tomato_fruit_blossom_end_rot":        { "action": "none",  "reason": "Not an infection (calcium and watering). Spraying does not help." },
+    "Tomato_fruit_catfacing":              { "action": "none",  "reason": "Not an infection (flower damage). Spraying does not help." },
+    "Tomato_fruit_fruit_cracking":         { "action": "none",  "reason": "Not an infection (uneven watering). Spraying does not help." }
+  }
+}

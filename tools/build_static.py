@@ -5,7 +5,7 @@ Everything the models do is unchanged; only how files reach the browser differs.
 - vision/index.php becomes index.html: the PHP header is dropped, the two cache-busting
   hashes are computed here, and <html> gets data-mode="static" so app.js reads the models
   from models/ instead of model.php and hides the field-note panel (no backend to post to).
-- app.js, styles.css and vendor/ are copied as they are.
+- app.js, spray.js, spray-rules.json, styles.css and vendor/ are copied as they are.
 - vision/private/model-metadata.json and the .onnx models are copied to models/.
   Missing models are reported; the page then shows "could not be loaded" for them.
 
@@ -62,12 +62,19 @@ def main():
     style, script = os.path.join(VISION, "styles.css"), os.path.join(VISION, "app.js")
     shutil.copyfile(style, os.path.join(out, "styles.css"))
     shutil.copyfile(script, os.path.join(out, "app.js"))
+    # The spray estimate: an ES module app.js imports, and the rules it fetches next to the page.
+    for name in ("spray.js", "spray-rules.json"):
+        shutil.copyfile(os.path.join(VISION, name), os.path.join(out, name))
     shutil.copytree(os.path.join(VISION, "vendor"), os.path.join(out, "vendor"))
     with open(os.path.join(out, "index.html"), "w", encoding="utf-8", newline="\n") as f:
         f.write(render_index(os.path.join(VISION, "index.php"), sha12(style), sha12(script)))
     shutil.copyfile(os.path.join(VISION, "MODEL-NOTICE.md"), os.path.join(out, "MODEL-NOTICE.md"))
 
-    shutil.copyfile(os.path.join(PRIVATE, "model-metadata.json"), os.path.join(out, "models", "model-metadata.json"))
+    # A gitignored model-metadata.local.json wins, as in model.php (scripts/link-public-models.sh writes it).
+    metadata = os.path.join(PRIVATE, "model-metadata.local.json")
+    if not os.path.isfile(metadata):
+        metadata = os.path.join(PRIVATE, "model-metadata.json")
+    shutil.copyfile(metadata, os.path.join(out, "models", "model-metadata.json"))
     missing = []
     for name in MODELS + OPTIONAL_MODELS:
         src = os.path.join(args.models, f"{name}.onnx")

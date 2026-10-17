@@ -16,3 +16,10 @@ runs/
 tests/.out/
 tests/node_modules/
 tests/fixtures.local.json
+
+# Local Python webcam demo (live/)
+live/models/*.part
+live/snapshots/
+live/demo.log
+vision/private/model-metadata.local.json
+live/CropSCOUT Live.app/Contents/_CodeSignature/

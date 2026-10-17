@@ -11,6 +11,15 @@ scripts/link-models.sh /path/to/onnx/models   # puts the model files into vision
 scripts/serve.sh                               # http://localhost:8080/vision/
 ```
 
+No access to the release models? The public ones work for tomato and cucumber:
+
+```bash
+python3.11 -m venv .venv && .venv/bin/pip install opencv-python onnxruntime numpy
+.venv/bin/python live/fetch_models.py --all   # 4 public files from crop-scout.com, SHA-256 checked
+scripts/link-public-models.sh                 # links them + writes a local metadata override (gitignored)
+scripts/serve.sh
+```
+
 On Windows (needs PHP 8 on PATH, e.g. `winget install PHP.PHP.8.4`, with `pdo_sqlite`, `sqlite3`, `gd`, `mbstring` and `zip` enabled in `php.ini`):
 
 ```bat
@@ -38,6 +47,17 @@ scripts\serve-static.cmd               # Windows: serve http://localhost:8081/
 
 Any static host works for the result (the camera still needs HTTPS or localhost). Field notes and the team review page exist only in the PHP deployment.
 
+### Local Python demo (laptop webcam, no PHP)
+
+```bash
+python3.11 -m venv .venv && .venv/bin/pip install opencv-python onnxruntime numpy
+.venv/bin/python live/fetch_models.py      # public v29 models from crop-scout.com, SHA-256 checked
+live/run.sh                                # q quit · space freeze · s snapshot · m lesion mask
+.venv/bin/python live/spray_cli.py photo.jpg
+```
+
+`live/run.sh` starts the demo through a tiny wrapper app (`live/CropSCOUT Live.app`) and streams its output to your terminal. The wrapper exists because Terminal.app declares no camera usage string on recent macOS, so a plain `python live/live_detect.py` from Terminal is denied the camera silently. The first run asks you to allow the camera for "CropSCOUT Live"; after that it just starts. From a terminal that already has camera access (for example the Claude app's terminal) `.venv/bin/python live/live_detect.py` works directly.
+
 ## How it works
 
 ```
@@ -53,6 +73,7 @@ camera ─► centre square ─► 224 px ─► crop/type model ─► conditio
    - It is cleared at once if the crop is lost.
 5. **Private.** Frames are analysed in browser memory and never leave the phone.
 6. **Leaf finder (optional, `?detector=1`).** A small YOLO26n detector finds each tomato leaf and fruit in a busy frame. Each one is cut out and goes through steps 1–4 on its own, with its own smoothing and votes. When one leaf fills the square, the square is analysed exactly as above.
+7. **Spray estimate.** For a confirmed disease the result shows how much to spray on that plant (dose scaled by the share of lesion-coloured leaf pixels). A healthy leaf, a non-infectious disorder or an uncertain result gets **no spray**; a virus says remove the plant instead. Rates in `vision/spray-rules.json` are hackathon placeholders. See [docs/spray-estimate.md](docs/spray-estimate.md).
 
 Details: [docs/how-it-works.md](docs/how-it-works.md) · [docs/leaf-finder.md](docs/leaf-finder.md) · [docs/field-classifier.md](docs/field-classifier.md)
 
@@ -111,6 +132,8 @@ We looked for public tomato datasets taken **in the field**, because a live came
 - [ ] Turn the finder on by default for tomato once it has been timed on real phones
 - [ ] Test on real phones (iPhone Safari, Android Chrome) and real field videos; use our own farm videos to raise the finder's recall on big leaves
 - [ ] Freeze report for the leaf being shown, not the whole square
+- [x] Spray estimate per confirmed verdict (no spray when healthy or uncertain)
+- [ ] Replace placeholder spray rates with label rates; drive a real pump from the estimate
 - [ ] Tomato fruit diseases (anthracnose, blossom-end rot, cracking, late blight)
 - [ ] WebGPU on Android Chrome, keeping WebAssembly as the fallback
 
@@ -118,9 +141,10 @@ We looked for public tomato datasets taken **in the field**, because a live came
 
 | Path | What |
 |---|---|
-| `vision/` | The web app (camera, models, safeguards, results, field notes) |
+| `vision/` | The web app (camera, models, safeguards, results, field notes); `spray.js` + `spray-rules.json` for the spray estimate |
 | `docs/` | How it works, speed, dataset research, browser AI notes |
-| `tests/` | Fake-camera end-to-end tests, and a real video played as the camera |
+| `tests/` | Fake-camera end-to-end tests, a real video played as the camera, spray-module tests |
+| `live/` | Local Python demo: OpenCV + ONNX Runtime live loop, spray estimate, image CLI |
 | `tools/benchmark/` | Model speed scripts |
 | `tools/detector/` | Leaf finder: fetch the box datasets, build, train, export, evaluate |
 | `tools/classifier/` | Field leaf classifier: fetch the field sets, cut leaves with the finder, fine-tune, export, score on real photos |

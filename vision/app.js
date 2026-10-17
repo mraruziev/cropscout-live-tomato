@@ -1,4 +1,5 @@
 import * as ort from './vendor/ort.wasm.bundle.min.mjs';
+import { decideSpray, estimateSeverityFromTensor, loadSprayRules, sprayChipText, spraySummary } from './spray.js';
 
 // Static mode (<html data-mode="static">, produced by tools/build_static.py): no PHP.
 // The models and their metadata are plain files under models/, and the field-note
@@ -95,8 +96,14 @@ const elements = {
     liveRecognition: document.querySelector('#live-recognition'),
     liveCropResult: document.querySelector('#live-crop-result'),
     liveConditionResult: document.querySelector('#live-condition-result'),
+    spraySection: document.querySelector('#spray-section'),
+    spray: document.querySelector('#result-spray'),
+    sprayDetail: document.querySelector('#result-spray-detail'),
     liveRecognitionAnnouncement: document.querySelector('#live-recognition-announcement'),
     liveLeafBoxes: document.querySelector('#live-leaf-boxes'),
+    liveSpray: document.querySelector('#live-spray'),
+    liveSprayPercent: document.querySelector('#live-spray-percent'),
+    liveSprayDetail: document.querySelector('#live-spray-detail'),
     cameraGuideCopy: document.querySelector('#camera-guide-copy'),
     cameraStatus: document.querySelector('#camera-status'),
     captureCamera: document.querySelector('#capture-camera-button'),
@@ -390,6 +397,7 @@ function renderResult(result) {
     elements.alternativesWrap.open = Boolean(result.openAlternatives && alternatives.length > 0);
     elements.alternativesSummary.textContent = result.alternativesLabel || 'Other covered model matches';
     elements.disclaimer.textContent = result.disclaimer || DEFAULT_DISCLAIMER;
+    renderSpray(result.spray);
     elements.cropCorrection.open = Boolean(
         result.openCorrection || elements.cropOverride.value || elements.organOverride.value
     );
@@ -397,6 +405,23 @@ function renderResult(result) {
     renderFieldNotePanel();
     showOnly(elements.card);
     revealResultOnPhone();
+}
+
+function renderSpray(spray) {
+    if (!elements.spraySection) return;
+    elements.spraySection.hidden = !spray;
+    if (!spray) return;
+    elements.spraySection.dataset.action = spray.action;
+    elements.spray.textContent = spraySummary(spray);
+    const detail = [];
+    if (spray.action === 'spray') {
+        if (spray.intervalDays) detail.push(`Repeat every ${spray.intervalDays} days while symptoms persist.`);
+        if (spray.reason) detail.push(spray.reason);
+        detail.push('Estimate only: use the registered label rate for your product and confirm with an agronomist.');
+    } else if (spray.reason) {
+        detail.push(spray.reason);
+    }
+    elements.sprayDetail.textContent = detail.join(' ');
 }
 
 function validateFile(file) {
@@ -464,6 +489,40 @@ function setLiveRecognition(state, cropText, conditionText) {
     }
 }
 
+// The live SPRAY readout. `readout` is {tone, percent, detail}; null hides it
+// (no spray rules loaded). Tone: idle | wait | spray | none | remove.
+function setLiveSpray(readout) {
+    if (!elements.liveSpray) return;
+    liveStats.spray = readout;
+    elements.liveSpray.hidden = !readout;
+    if (!readout) return;
+    elements.liveSpray.classList.remove('is-idle', 'is-wait', 'is-spray', 'is-none', 'is-remove');
+    elements.liveSpray.classList.add(`is-${readout.tone}`);
+    const percentText = `SPRAY ${readout.percent}%`;
+    if (elements.liveSprayPercent.textContent !== percentText) elements.liveSprayPercent.textContent = percentText;
+    if (elements.liveSprayDetail.textContent !== readout.detail) elements.liveSprayDetail.textContent = readout.detail;
+}
+
+const SPRAY_IDLE = Object.freeze({ tone: 'idle', percent: 0, detail: 'Point the square at a tomato leaf' });
+
+function sprayReadoutFor(runtime, decision, phase) {
+    if (!runtime.sprayRules) return null;
+    if (phase === 'abstain') return SPRAY_IDLE;
+    if (phase === 'loading') return Object.freeze({ tone: 'wait', percent: 0, detail: 'Loading the condition model…' });
+    if (phase === 'nocondition') return Object.freeze({ tone: 'idle', percent: 0, detail: 'No covered condition for this view' });
+    if (phase === 'confirming') return Object.freeze({ tone: 'wait', percent: 0, detail: 'Condition found · confirming over frames…' });
+    if (phase === 'uncertain' || !decision) return Object.freeze({ tone: 'wait', percent: 0, detail: 'Condition not confirmed · hold steady' });
+    if (decision.action === 'spray') {
+        return Object.freeze({
+            tone: 'spray',
+            percent: decision.percent,
+            detail: `${decision.doseMl} mL ${decision.product} · ~${decision.spraySeconds} s pump`,
+        });
+    }
+    if (decision.action === 'remove') return Object.freeze({ tone: 'remove', percent: 0, detail: 'Do not spray · remove this plant (virus)' });
+    return Object.freeze({ tone: 'none', percent: 0, detail: decision.reason || 'Nothing to spray' });
+}
+
 function announceLiveRecognition(message) {
     if (message === lastLiveAnnouncement) return;
     lastLiveAnnouncement = message;
@@ -524,6 +583,7 @@ function resetLiveRecognition() {
         'Starting recognition…',
         'Keep one fruit or leaf inside the square'
     );
+    setLiveSpray(SPRAY_IDLE);
 }
 
 function releaseCameraStream() {
@@ -946,6 +1006,7 @@ async function runLiveRecognition(generation) {
 function showLiveStatus(status) {
     setLiveRecognition(status.state, status.crop, status.condition);
     announceLiveRecognition(status.announcement);
+    if (status.spray !== undefined) setLiveSpray(status.spray);
 }
 
 // Runs the crop/type gate, the condition route and the frame vote for one live
@@ -985,6 +1046,7 @@ async function assessLiveTrack(runtime, track, tensor, isCurrent, onCheckingCond
             announcement: parsed.crop
                 ? 'Crop match is not reliable yet.'
                 : 'No supported crop is recognized yet.',
+            spray: sprayReadoutFor(runtime, null, 'abstain'),
         };
     }
 
@@ -1001,6 +1063,7 @@ async function assessLiveTrack(runtime, track, tensor, isCurrent, onCheckingCond
             crop: cropLabel,
             condition: `${scorePercent(topCropView.confidence)} crop match · loading its condition model…`,
             announcement: `${cropLabel} identified. Loading its condition model.`,
+            spray: sprayReadoutFor(runtime, null, 'loading'),
         };
     }
     if (!track.conditionDisplayReady && onCheckingCondition) {
@@ -1042,14 +1105,16 @@ async function assessLiveTrack(runtime, track, tensor, isCurrent, onCheckingCond
             crop: cropLabel,
             condition: `${scorePercent(topCropView.confidence)} crop match · no covered condition for this view`,
             announcement: `${cropLabel} identified. No covered condition is available for this view.`,
+            spray: sprayReadoutFor(runtime, null, 'nocondition'),
         };
     }
     const passed = assessment.result.certainty === 'high-confidence screen'
         || assessment.result.certainty === 'healthy-like pattern';
+    const sprayText = passed && evaluated.spray ? ` · ${sprayChipText(evaluated.spray)}` : '';
     const vote = voteLiveVerdict(
         track,
         passed ? `${family}|${assessment.result.certainty}|${assessment.result.condition}` : '',
-        passed ? `${assessment.result.condition} · ${scorePercent(assessment.result.conditionScore)}` : ''
+        passed ? `${assessment.result.condition} · ${scorePercent(assessment.result.conditionScore)}${sprayText}` : ''
     );
     if (vote.shown) {
         return {
@@ -1057,6 +1122,8 @@ async function assessLiveTrack(runtime, track, tensor, isCurrent, onCheckingCond
             crop: cropLabel,
             condition: vote.shown.text,
             announcement: `${cropLabel}. ${vote.shown.text.split(' · ')[0]}.`,
+            // The dose follows the same vote as the label: it appears only with a held verdict.
+            spray: sprayReadoutFor(runtime, passed ? evaluated.spray : null, 'shown'),
         };
     }
     if (passed) {
@@ -1065,6 +1132,7 @@ async function assessLiveTrack(runtime, track, tensor, isCurrent, onCheckingCond
             crop: cropLabel,
             condition: `Condition pattern found · confirming (${vote.pending}/${LIVE_VOTES_TO_SHOW})…`,
             announcement: `${cropLabel} identified. Checking condition.`,
+            spray: sprayReadoutFor(runtime, null, 'confirming'),
         };
     }
     return {
@@ -1072,6 +1140,7 @@ async function assessLiveTrack(runtime, track, tensor, isCurrent, onCheckingCond
         crop: cropLabel,
         condition: 'Condition not reliable yet · hold steady or move closer',
         announcement: `${cropLabel} identified. Condition is not reliable yet.`,
+        spray: sprayReadoutFor(runtime, null, 'uncertain'),
     };
 }
 
@@ -1278,11 +1347,19 @@ function showLiveLeaves(tracks) {
     if (!primary) {
         setLiveRecognition('uncertain', 'Leaves are too small', 'Move closer so each leaf is bigger in the square');
         announceLiveRecognition('Leaves are too small. Move closer.');
+        setLiveSpray(SPRAY_IDLE);
         return;
     }
     const crop = ranked.length > 1 ? `${primary.status.crop} · ${ranked.length} found` : primary.status.crop;
     setLiveRecognition(primary.status.state, crop, primary.status.condition);
     announceLiveRecognition(primary.status.announcement);
+    // With several leaves, the readout follows the one that needs the most spray.
+    const sprays = ranked.map((track) => track.status.spray).filter(Boolean);
+    if (sprays.length > 0) {
+        const worst = sprays.reduce((best, item) => (item.percent > best.percent ? item : best), sprays[0]);
+        const confirmed = sprays.find((item) => item.tone === 'remove');
+        setLiveSpray(confirmed && worst.percent === 0 ? confirmed : worst);
+    }
 }
 
 function recordDetectorTime(detectorMs) {
@@ -1815,9 +1892,14 @@ async function createRuntime() {
     const metadata = await fetchMetadata();
 
     setModelState('loading', 'loading models');
-    const [cropViewBytes, diseaseBytes] = await Promise.all([
+    const [cropViewBytes, diseaseBytes, sprayRules] = await Promise.all([
         fetchProtectedModel(MODEL_ENDPOINTS.cropView, 'The crop/view model', metadata.cropOnnxSha256),
         fetchProtectedModel(MODEL_ENDPOINTS.disease, 'The disease model', metadata.diseaseOnnxSha256),
+        // The spray estimate is optional: without rules the page simply shows no estimate.
+        loadSprayRules().catch((error) => {
+            console.warn('Spray rules unavailable; no spray estimate will be shown.', error);
+            return null;
+        }),
     ]);
 
     const sessionOptions = {
@@ -1856,7 +1938,7 @@ async function createRuntime() {
         elements.cameraGuideCopy.textContent = 'Each leaf or fruit inside this square is found and checked';
     }
 
-    const runtime = Object.freeze({ metadata, cropViewSession, diseaseSession, leafDetector });
+    const runtime = Object.freeze({ metadata, cropViewSession, diseaseSession, leafDetector, sprayRules });
     // A failed eager load is kept like any specialist failure: that crop then
     // reports its condition model as unavailable, it never falls back.
     for (const specialist of metadata.conditionSpecialists) {
@@ -2730,7 +2812,24 @@ async function assessConditionRoute(
         selected = considerSpecialist ? specialist : base;
     }
 
-    return Object.freeze({ route, ...selected });
+    return Object.freeze({ route, ...selected, spray: sprayEstimate(runtime, selected, input) });
+}
+
+// How much to spray for this verdict. Only a verdict that passed every
+// safeguard gets a dose; healthy, non-infectious and viral conditions get none.
+// Severity is the share of lesion-coloured leaf pixels in the 224 px input.
+function sprayEstimate(runtime, evaluation, input) {
+    const rules = runtime.sprayRules;
+    const assessment = evaluation?.assessment;
+    if (!rules || !assessment) return null;
+    const top = evaluation.conditionMatch.candidates[0];
+    const certain = assessment.result.certainty === 'high-confidence screen'
+        || assessment.result.certainty === 'healthy-like pattern';
+    const data = input?.data;
+    const severity = data && data.length === 3 * IMAGE_SIZE * IMAGE_SIZE
+        ? estimateSeverityFromTensor(data, rules, IMAGE_SIZE)
+        : null;
+    return decideSpray(rules, top?.condition.label ?? null, certain, severity);
 }
 
 /* =========================== Field notes ===========================
@@ -3221,7 +3320,7 @@ async function analyzeFile(file) {
         if (sequence !== analysisSequence) return;
 
         assessment.result.evidenceShown = Boolean(evidence);
-        renderResult(assessment.result);
+        renderResult({ ...assessment.result, spray: evaluated.spray });
         if (evidence) showEvidenceOverlay(evidence);
     } catch (error) {
         if (sequence !== analysisSequence) return;

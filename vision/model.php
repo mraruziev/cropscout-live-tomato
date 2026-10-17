@@ -17,9 +17,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET' && $_SERVER['REQUEST_METHOD'] !== 'HEAD
     exit('Method not allowed.');
 }
 
+// Local development only: a gitignored model-metadata.local.json next to the
+// release metadata takes precedence, so a machine without every release model
+// can still run the site (see scripts/link-models.sh and live/fetch_models.py).
+$metadataPath = __DIR__ . '/private/model-metadata.json';
+if (is_file(__DIR__ . '/private/model-metadata.local.json')) {
+    $metadataPath = __DIR__ . '/private/model-metadata.local.json';
+}
+
 $models = [
     'metadata' => [
-        'path' => __DIR__ . '/private/model-metadata.json',
+        'path' => $metadataPath,
         'download_name' => 'cropscout-model-metadata.json',
         'content_type' => 'application/json; charset=utf-8',
     ],
@@ -68,7 +76,7 @@ $model = $models[$requested];
 // Root release metadata enables these optional routes only after model validation.
 $gatedFamilies = ['lemon-leaf' => ['Lemon_leaf'], 'tomato-leaf' => ['Tomato_leaf']];
 if (array_key_exists($requested, $gatedFamilies)) {
-    $raw = @file_get_contents(__DIR__ . '/private/model-metadata.json');
+    $raw = @file_get_contents($metadataPath);
     $metadata = is_string($raw) ? json_decode($raw, true) : null;
     $enabled = false;
     if (is_array($metadata) && isset($metadata['condition_specialists']) && is_array($metadata['condition_specialists'])) {

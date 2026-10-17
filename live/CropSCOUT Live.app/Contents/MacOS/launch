@@ -1,0 +1,12 @@
+#!/bin/zsh
+# Executable of the CropSCOUT Live wrapper app. The bundle exists only so macOS
+# attributes the camera request to an app that declares NSCameraUsageDescription
+# (Terminal.app and Homebrew's Python.app do not, so they are denied silently).
+# Python runs as a child, not via exec: the responsible process must stay this
+# bundle's executable or the attribution falls back to Python.app.
+REPO="$(cd "$(dirname "$0")/../../../.." && pwd)"
+cd "$REPO" || exit 1
+"$REPO/.venv/bin/python" -u "$REPO/live/live_detect.py" "$@" >> "$REPO/live/demo.log" 2>&1 &
+CHILD=$!
+trap 'kill $CHILD 2>/dev/null' INT TERM
+wait $CHILD

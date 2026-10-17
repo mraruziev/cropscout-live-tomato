@@ -306,6 +306,12 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
                 <p id="result-summary"></p>
             </section>
 
+            <section class="result-section spray-section" id="spray-section" hidden>
+                <h3>Spray estimate</h3>
+                <p class="spray-summary" id="result-spray"></p>
+                <p class="spray-detail" id="result-spray-detail"></p>
+            </section>
+
             <section class="result-section" id="next-section">
                 <h3>What to do next</h3>
                 <ol id="result-next"></ol>
@@ -420,6 +426,11 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
                 </span>
             </aside>
             <span class="visually-hidden" id="live-recognition-announcement" aria-live="polite" aria-atomic="true"></span>
+            <aside class="live-spray is-idle" id="live-spray" hidden>
+                <small>Spray estimate</small>
+                <strong id="live-spray-percent">SPRAY 0%</strong>
+                <span id="live-spray-detail">Point the square at a tomato leaf</span>
+            </aside>
             <div class="camera-guide">
                 <span id="camera-guide-copy">Everything inside this square is analysed</span>
             </div>
