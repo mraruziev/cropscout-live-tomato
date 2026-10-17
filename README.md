@@ -110,6 +110,10 @@ Details and model-by-model numbers: [docs/benchmark.md](docs/benchmark.md)
 
 The models were trained on public datasets: PlantVillage, PlantDoc, Fruits-360 and others, and the tomato-leaf model also on photos of leaves on the plant from CCMT (Ghana), SLIF-Tomato (Sri Lanka), a Sichuan greenhouse set and a Taiwan set, cut out by the leaf finder. All of them are listed with licences in `vision/private/dataset-provenance.json`; how the field set was built and what it changed is in [docs/field-classifier.md](docs/field-classifier.md).
 
+## Data and weights
+
+The training data (about 7.5 GB) and the training runs are not in git; they are zip assets on the GitHub release `datasets-2026-10-17`. `scripts/fetch-datasets.sh` downloads and unpacks them; [data/README.md](data/README.md) lists what each asset holds.
+
 ## Field datasets
 
 We looked for public tomato datasets taken **in the field**, because a live camera sees real plants, not leaves on a white table. Every claim was checked twice. The leaf finder is trained on SLIF-Tomato, the Sichuan greenhouse set, PlantDoc and TFDD (tomato fruit), all CC BY 4.0; Tomato-Village is not used.
@@ -150,6 +154,6 @@ We looked for public tomato datasets taken **in the field**, because a live came
 | `tools/benchmark/` | Model speed scripts |
 | `tools/detector/` | Leaf finder: fetch the box datasets, build, train, export, evaluate |
 | `tools/classifier/` | Field leaf classifier: fetch the field sets, cut leaves with the finder, fine-tune, export, score on real photos |
-| `scripts/` | Fetch, link or install the models; run the PHP server, or build and serve the PHP-free copy |
+| `scripts/` | Fetch the models or the datasets; run the PHP server, or build and serve the PHP-free copy |
 
 *Screening support only. Confirm uncertain or severe symptoms with a local agronomist before treatment.*
