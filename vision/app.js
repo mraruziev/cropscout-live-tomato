@@ -50,6 +50,13 @@ const LIVE_VOTES_TO_HOLD = 2;
 // Leaf finder (feature flag): open the page with ?detector=1. It also needs a
 // leaf_detector entry in the release metadata.
 const LEAF_FINDER_ENDPOINT = modelUrl('leaf-detector', 'cropscout-leaf-detector.onnx');
+// Crop focus. The crop/type gate compares nine classes, and a tomato leaf on a plant can
+// lose to "apple leaf" by a few points although the model was sure it was a leaf. This
+// deployment looks at tomato plants, so by default the gate decides only leaf / fruit /
+// other: the scores of the other crops' leaf and fruit classes are moved to the tomato
+// leaf and fruit classes before the thresholds apply. The models and every safeguard
+// after the gate are unchanged. Open the page with ?crop=all for the full multi-crop gate.
+const CROP_FOCUS = new URLSearchParams(window.location.search).get('crop') === 'all' ? 'all' : 'tomato';
 const LEAF_FINDER_REQUESTED = new URLSearchParams(window.location.search).get('detector') === '1';
 // A detected leaf keeps its track while its box overlaps last frame's box by
 // at least this much, and loses it after this many frames in a row unseen.
@@ -1023,7 +1030,10 @@ async function assessLiveTrack(runtime, track, tensor, isCurrent, onCheckingCond
     );
     if (!isCurrent()) return null;
 
-    const smoothed = smoothLiveCropProbabilities(track, cropProbabilities);
+    const smoothed = smoothLiveCropProbabilities(
+        track,
+        focusCropProbabilities(cropProbabilities, runtime.metadata.cropViewClasses)
+    );
     const rankedCropViews = rankClasses(smoothed, runtime.metadata.cropViewClasses);
     const topCropView = rankedCropViews[0];
     const parsed = parseCropView(topCropView.label);
@@ -1043,7 +1053,7 @@ async function assessLiveTrack(runtime, track, tensor, isCurrent, onCheckingCond
                 : 'No supported crop yet',
             condition: parsed.crop
                 ? `${scorePercent(topCropView.confidence)} weak match · keep one crop centered`
-                : 'Fill the square with an apple, tomato, cucumber, or lemon',
+                : `Fill the square with ${supportedCropsText()}`,
             announcement: parsed.crop
                 ? 'Crop match is not reliable yet.'
                 : 'No supported crop is recognized yet.',
@@ -2412,6 +2422,30 @@ function rankClasses(probabilities, classes) {
         .sort((left, right) => right.confidence - left.confidence);
 }
 
+// Tomato focus (see CROP_FOCUS): fold every other crop's leaf score into Tomato_leaf and
+// fruit score into Tomato_fruit. "Other" keeps its score, so a frame with no crop in it
+// still abstains. Returns the probabilities untouched when the focus is off or the class
+// list has no tomato classes.
+function focusCropProbabilities(probabilities, classes) {
+    if (CROP_FOCUS !== 'tomato') return probabilities;
+    const target = { leaf: classes.indexOf('Tomato_leaf'), fruit: classes.indexOf('Tomato_fruit') };
+    if (target.leaf < 0 || target.fruit < 0) return probabilities;
+    const focused = Array.from(probabilities);
+    classes.forEach((label, index) => {
+        if (index === target.leaf || index === target.fruit) return;
+        const { crop, view } = parseCropView(label);
+        if (!crop || (view !== 'leaf' && view !== 'fruit')) return;
+        focused[target[view]] += focused[index];
+        focused[index] = 0;
+    });
+    return focused;
+}
+
+function supportedCropsText(article = true) {
+    if (CROP_FOCUS === 'tomato') return article ? 'a tomato leaf or fruit' : 'tomato leaf or fruit';
+    return article ? 'an apple, tomato, cucumber, or lemon' : 'apple, tomato, cucumber, or lemon';
+}
+
 function humanizeClass(label) {
     return label.replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
 }
@@ -2446,7 +2480,7 @@ function identityScoreLabel(identity) {
 
 function cropViewAlternatives(ranked, excludeIndex) {
     return ranked
-        .filter((candidate) => candidate.index !== excludeIndex)
+        .filter((candidate) => candidate.index !== excludeIndex && candidate.confidence > 0)
         .slice(0, 3)
         .map((candidate) => ({
             label: humanizeClass(candidate.label),
@@ -2472,7 +2506,7 @@ function cropAbstention(ranked, parsed, thresholds) {
         title: unsupported ? 'We couldn’t identify this photo reliably' : 'Crop not identified confidently',
         certainty: 'no reliable match',
         lede: unsupported
-            ? 'Try again with one apple, tomato, cucumber, or lemon fruit or leaf filling the square.'
+            ? `Try again with one ${supportedCropsText(false)} filling the square.`
             : `The closest crop/view pattern was ${humanizeClass(top.label)}, but the score was not reliable enough.`,
         identityScore: unsupported ? null : top.confidence,
         identityScoreLabel: unsupported ? 'Unsupported / other evidence' : 'Closest crop and photo-type score',
@@ -3222,7 +3256,10 @@ async function analyzeFile(file) {
         );
         if (sequence !== analysisSequence) return;
 
-        const rankedCropViews = rankClasses(cropProbabilities, runtime.metadata.cropViewClasses);
+        const rankedCropViews = rankClasses(
+            focusCropProbabilities(cropProbabilities, runtime.metadata.cropViewClasses),
+            runtime.metadata.cropViewClasses
+        );
         const topCropView = rankedCropViews[0];
         const parsed = parseCropView(topCropView.label);
         const abstention = cropAbstention(rankedCropViews, parsed, runtime.metadata.thresholds);

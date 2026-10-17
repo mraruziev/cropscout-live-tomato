@@ -39,6 +39,7 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
         <dl class="sys-readout" aria-label="Subsystem telemetry">
             <div><dt>Module</dt><dd>VIS-CAM 01</dd></div>
             <div><dt>Runtime</dt><dd>ORT-web · WASM · 1T</dd></div>
+            <div><dt>Crop</dt><dd id="hud-crop">TOMATO</dd></div>
             <div><dt>Mode</dt><dd id="hud-mode">SQUARE</dd></div>
             <div><dt>Frames</dt><dd id="hud-frames">0</dd></div>
             <div><dt>Infer</dt><dd id="hud-ms">— ms</dd></div>
@@ -57,7 +58,7 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
         <p class="hero-eyebrow"><span class="rec-dot" aria-hidden="true"></span>Onboard perception · live screening</p>
         <h1 id="page-title">Camera AI subsystem</h1>
         <p class="hero-lede">This is the vision stage of the CropSCOUT rover. The camera feed is read a few times a second, each frame goes through the crop gate, the condition model and four safeguards, and a label is shown only when several frames agree.</p>
-        <p class="hero-scope">Tomato leaf is the primary target: healthy, early blight, late blight, septoria, bacterial spot, black spot, target spot, leaf mold, mosaic virus, yellow leaf curl virus and spider mite. Cucumber, apple and lemon are covered as secondary crops.</p>
+        <p class="hero-scope" id="hero-scope">Tomato focus: the gate decides leaf, fruit or neither, and the crop is taken as tomato. Tomato leaf conditions: healthy, early blight, late blight, septoria, bacterial spot, black spot, target spot, leaf mold, mosaic virus, yellow leaf curl virus and spider mite. Switch the crop focus to ALL to let the gate also tell apple, cucumber and lemon apart.</p>
         <div class="hero-actions">
             <button class="hero-camera-button" id="hero-camera-button" type="button">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h3l1.4-2h7.2l1.4 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
@@ -67,6 +68,9 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
                 <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="m4 16 4.5-4.5 3.5 3.5 2.5-2.5L20 18"/><circle cx="15.5" cy="9.5" r="1.4"/></svg>
                 Analyse a still
             </button>
+            <a class="hero-flag" id="crop-focus-toggle" href="?crop=all">
+                <span id="crop-focus-state">Crop focus: TOMATO</span> <span aria-hidden="true">·</span> toggle
+            </a>
             <a class="hero-flag" id="leaf-finder-toggle" href="?detector=1">
                 <span id="leaf-finder-state">Leaf finder: OFF</span> <span aria-hidden="true">·</span> toggle
             </a>
@@ -77,7 +81,7 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
         <h2 id="pipeline-title">Inference pipeline</h2>
         <ol class="pipeline">
             <li><span>01</span><strong>Sensor feed</strong><small>centre square · 224 px · two-step downscale</small></li>
-            <li><span>02</span><strong>Crop / type gate</strong><small>YOLO26n-cls · tomato leaf, fruit, other crop, other</small></li>
+            <li><span>02</span><strong>Crop / type gate</strong><small id="pipeline-gate">YOLO26n-cls · tomato focus: leaf, fruit or other</small></li>
             <li><span>03</span><strong>Condition model</strong><small>tomato-leaf specialist · 46 classes · field-trained</small></li>
             <li><span>04</span><strong>Safeguards</strong><small>confidence · margin · family mass · healthy separation</small></li>
             <li><span>05</span><strong>Frame vote</strong><small>3 of last 4 agree to show · withdrawn under 2</small></li>
@@ -479,13 +483,34 @@ const hud = {
     camFrames: document.getElementById('hud-cam-frames'),
     camMs: document.getElementById('hud-cam-ms'),
 };
-const detectorRequested = new URLSearchParams(window.location.search).get('detector') === '1';
-// The leaf finder flag lives in the URL, so the toggle and the mode readout are set here,
-// not on the server: the same page works as PHP and as a static build.
-const toggle = document.getElementById('leaf-finder-toggle');
-if (toggle) {
-    toggle.href = detectorRequested ? '?' : '?detector=1';
+const params = new URLSearchParams(window.location.search);
+const detectorRequested = params.get('detector') === '1';
+const cropFocusAll = params.get('crop') === 'all';
+// Both flags live in the URL, so the toggles and the readouts are set here, not on the
+// server: the same page works as PHP and as a static build. Each toggle keeps the other flag.
+function flagUrl(changes) {
+    const next = new URLSearchParams(params);
+    Object.entries(changes).forEach(([key, value]) => (value === null ? next.delete(key) : next.set(key, value)));
+    const query = next.toString();
+    return query ? `?${query}` : window.location.pathname;
+}
+const finderToggle = document.getElementById('leaf-finder-toggle');
+if (finderToggle) {
+    finderToggle.href = flagUrl({ detector: detectorRequested ? null : '1' });
     document.getElementById('leaf-finder-state').textContent = detectorRequested ? 'Leaf finder: ON' : 'Leaf finder: OFF';
+}
+const cropToggle = document.getElementById('crop-focus-toggle');
+if (cropToggle) {
+    cropToggle.href = flagUrl({ crop: cropFocusAll ? null : 'all' });
+    document.getElementById('crop-focus-state').textContent = cropFocusAll ? 'Crop focus: ALL' : 'Crop focus: TOMATO';
+}
+const hudCrop = document.getElementById('hud-crop');
+if (hudCrop) hudCrop.textContent = cropFocusAll ? 'ALL' : 'TOMATO';
+if (cropFocusAll) {
+    const gate = document.getElementById('pipeline-gate');
+    if (gate) gate.textContent = 'YOLO26n-cls · apple, tomato, cucumber, lemon · leaf or fruit · other';
+    const scope = document.getElementById('hero-scope');
+    if (scope) scope.textContent = 'All crops: the gate tells apple, tomato, cucumber and lemon apart, leaf or fruit, before the condition model runs. Switch the crop focus to TOMATO to treat every leaf as a tomato leaf.';
 }
 if (hud.mode && detectorRequested) hud.mode.textContent = 'LEAF FINDER';
 function tick() {
