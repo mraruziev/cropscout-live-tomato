@@ -60,6 +60,12 @@ live/run.sh                                # q quit · space freeze · s snapsho
 
 `live/run.sh` starts the demo through a tiny wrapper app (`live/CropSCOUT Live.app`) and streams its output to your terminal. The wrapper exists because Terminal.app declares no camera usage string on recent macOS, so a plain `python live/live_detect.py` from Terminal is denied the camera silently. The first run asks you to allow the camera for "CropSCOUT Live"; after that it just starts. From a terminal that already has camera access (for example the Claude app's terminal) `.venv/bin/python live/live_detect.py` works directly.
 
+## Tomato focus
+
+The page opens in **tomato focus**. The crop/type gate still runs, but it only decides *leaf, fruit or neither*: the scores of the other crops' leaf and fruit classes are added to the tomato leaf and fruit classes before the thresholds apply. A tomato leaf on the plant that the gate scored 45 % tomato leaf and 40 % apple leaf is then a 85 % leaf, and goes to the tomato-leaf condition model instead of abstaining or being called an apple. Nothing after the gate changes: the condition model, the four safeguards and the frame vote are the same. Frames with no crop in them still abstain, because the *Other* score is kept.
+
+Open the page with `?crop=all` (or the **Crop focus** toggle) for the full multi-crop gate, which tells apple, cucumber and lemon apart from tomato.
+
 ## How it works
 
 ```
