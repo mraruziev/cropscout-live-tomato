@@ -1,0 +1,16 @@
+.venv/
+node_modules/
+__pycache__/
+.DS_Store
+# Datasets and model weights are large and have their own licenses: keep them out of git
+data/raw/
+data/processed/
+*.onnx
+*.pt
+runs/
+.scratch/
+
+# Live-camera e2e harness: generated clips/reports, local fixture paths, deps
+tests/.out/
+tests/node_modules/
+tests/fixtures.local.json

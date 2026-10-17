@@ -1,0 +1,12 @@
+{
+  "name": "cropscout-vision-live-e2e",
+  "private": true,
+  "description": "End-to-end harness for the CropSCOUT Live camera mode (fake camera fed from Y4M files).",
+  "type": "module",
+  "scripts": {
+    "e2e": "node live-e2e.mjs"
+  },
+  "dependencies": {
+    "playwright": "1.63.0"
+  }
+}

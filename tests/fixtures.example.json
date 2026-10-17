@@ -1,0 +1,29 @@
+{
+  "description": "Example fixture list for live-e2e.mjs. Copy to fixtures.local.json (gitignored) and replace the placeholder paths with real absolute paths. Each fixture needs exactly one of: \"path\" (an image), \"dir\" (a folder; the first image by sorted file name is used) or \"synthetic\" (\"noise\" or \"grey\"). \"expected\" is free text shown in the report.",
+  "fixtures": [
+    { "id": "user-tomato-fruit", "path": "/path/to/photos/tomato-fruit.jpg", "expected": "Tomato_fruit_healthy" },
+    { "id": "user-tomato-leaf-septoria", "path": "/path/to/photos/tomato-leaf-septoria.jpg", "expected": "Tomato_leaf_septoria_leaf_spot" },
+    { "id": "user-tomato-leaf-field", "path": "/path/to/photos/tomato-leaf-field.jpg", "expected": "Tomato_leaf (condition unlabelled)" },
+    { "id": "user-tomato-cluster", "path": "/path/to/photos/tomato-cluster.png", "expected": "Tomato_fruit_healthy" },
+    { "id": "user-septoria-ref", "path": "/path/to/photos/septoria-reference.jpg", "expected": "Tomato_leaf (condition unlabelled)" },
+    { "id": "user-cucumber", "path": "/path/to/photos/cucumber-fruit.jpg", "expected": "Cucumber_fruit_pythium_fruit_rot" },
+    { "id": "user-lemon-leaf-spots", "path": "/path/to/photos/lemon-leaf.jpg", "expected": "Lemon_leaf_black_spot" },
+    { "id": "user-ovate-leaf-other", "path": "/path/to/photos/other-leaf.webp", "expected": "abstain (not a covered crop)" },
+
+    { "id": "class-tomato-fruit-healthy", "dir": "/path/to/dataset/val/Tomato_fruit_healthy", "expected": "Tomato_fruit_healthy" },
+    { "id": "class-tomato-leaf-bacterial-spot", "dir": "/path/to/dataset/val/Tomato_leaf_bacterial_spot", "expected": "Tomato_leaf_bacterial_spot" },
+    { "id": "class-tomato-leaf-black-spot", "dir": "/path/to/dataset/val/Tomato_leaf_black_spot", "expected": "Tomato_leaf_black_spot" },
+    { "id": "class-tomato-leaf-early-blight", "dir": "/path/to/dataset/val/Tomato_leaf_early_blight", "expected": "Tomato_leaf_early_blight" },
+    { "id": "class-tomato-leaf-healthy", "dir": "/path/to/dataset/val/Tomato_leaf_healthy", "expected": "Tomato_leaf_healthy" },
+    { "id": "class-tomato-leaf-late-blight", "dir": "/path/to/dataset/val/Tomato_leaf_late_blight", "expected": "Tomato_leaf_late_blight" },
+    { "id": "class-tomato-leaf-leaf-mold", "dir": "/path/to/dataset/val/Tomato_leaf_leaf_mold", "expected": "Tomato_leaf_leaf_mold" },
+    { "id": "class-tomato-leaf-septoria-leaf-spot", "dir": "/path/to/dataset/val/Tomato_leaf_septoria_leaf_spot", "expected": "Tomato_leaf_septoria_leaf_spot" },
+    { "id": "class-tomato-leaf-target-spot", "dir": "/path/to/dataset/val/Tomato_leaf_target_spot", "expected": "Tomato_leaf_target_spot" },
+    { "id": "class-tomato-leaf-tomato-mosaic-virus", "dir": "/path/to/dataset/val/Tomato_leaf_tomato_mosaic_virus", "expected": "Tomato_leaf_tomato_mosaic_virus" },
+    { "id": "class-tomato-leaf-two-spotted-spider-mite", "dir": "/path/to/dataset/val/Tomato_leaf_two_spotted_spider_mite", "expected": "Tomato_leaf_two_spotted_spider_mite" },
+    { "id": "class-tomato-leaf-yellow-leaf-curl-virus", "dir": "/path/to/dataset/val/Tomato_leaf_yellow_leaf_curl_virus", "expected": "Tomato_leaf_yellow_leaf_curl_virus" },
+
+    { "id": "no-crop-noise", "synthetic": "noise", "expected": "abstain" },
+    { "id": "no-crop-grey", "synthetic": "grey", "expected": "abstain" }
+  ]
+}
