@@ -4,7 +4,7 @@ Each dataset was found by one agent and then fact-checked by a second agent that
 ## SLIF-Tomato (Sri Lankan In-Field Tomato Dataset)
 
 - **Link:** https://www.kaggle.com/datasets/romiyalgeorge/slif-tomato-dataset (the URL is correct; Kaggle dataset DOI 10.34740/kaggle/ds/8911633; direct archive endpoint https://www.kaggle.com/api/v1/datasets/download/romiyalgeorge/slif-tomato-dataset). Version 1 was released 2025-12-03. archive.zip is 6.16 GB zipped and 6.62 GB unpacked, with 17,834 files. The download is free. An anonymous GET to the API endpoint returned a 302 redirect to a signed Google Cloud Storage archive.zip URL, so no Kaggle login seems to be needed (I did not fetch the archive). The download button on the website normally asks you to sign in.
-- **Used to train the current models:** No
+- **Used to train the current models:** Yes. The detection part trains the leaf finder; the 890 raw photos (centre squares and finder leaf crops) train the tomato-leaf condition model and the crop/type model ([field-classifier.md](field-classifier.md)).
 
 ### Checked
 
@@ -76,7 +76,7 @@ Process note: WebFetch cached the open-access paper PDF and the Kaggle card imag
 ## Tomato Disease Dataset (Sichuan greenhouse; Liu et al., Data in Brief 2025)
 
 - **Link:** https://data.mendeley.com/datasets/c2x8rynybg/1 (correct as given; DOI 10.17632/c2x8rynybg.1, version 1 published 2025-07-22). Paper: Liu Y, Zhu Y, Hu L, Huo Y, Gao W, Hu R, He P, 'A labeled image dataset of common tomato diseases for classification and object detection', Data in Brief 63 (2025) 112032, doi:10.1016/j.dib.2025.112032, PMC12553018. The Mendeley page lists only Yongbo Liu as contributor. Download is free and needs no login: with no auth, the Mendeley public API returns a whole-dataset zip redirect (public-api/zip/c2x8rynybg/download/1 -> S3 presigned c2x8rynybg-1.zip) and gives a public download_url for each file. I only listed the files and looked at a few XML files; I did not do a full download.
-- **Used to train the current models:** No
+- **Used to train the current models:** Yes. The leaf, fruit and stem boxes train the leaf finder; the `Viral` photos train the tomato-leaf condition model as mosaic virus, leaf crops only where they match a `Viral_Leaf` box ([field-classifier.md](field-classifier.md)).
 
 ### Checked
 
@@ -206,7 +206,7 @@ Process note: WebFetch cached the open-access paper PDF and the Kaggle card imag
 ## CCMT: Dataset for Crop Pest and Disease Detection (Ghana; tomato subset)
 
 - **Link:** https://data.mendeley.com/datasets/bwh3zbpkpv/1 is the correct URL (DOI 10.17632/bwh3zbpkpv.1, published 26 Apr 2023, v1 only). The companion paper is Data in Brief 2023, doi:10.1016/j.dib.2023.109306 (PMC10285554). The data is free and needs no login. With HEAD requests only, I confirmed that each file's public URL redirects to a public S3 object (HTTP 200) and that the "Download All" zip redirects to a presigned S3 URL. Neither needs auth. The whole release is 130,472 JPEGs, 8,424,664,368 bytes (shown as "Download All 7.86 GB"). There is no tomato-only zip. The raw tomato folder alone is about 284 MB (5,805 files), and each file has its own public URL, so a script can fetch just those. I did not download any images.
-- **Used to train the current models:** No
+- **Used to train the current models:** Yes: the raw `healthy` and `septoria leaf spot` folders, deduplicated by SHA-256 and perceptual hash and split by photo group, in the tomato-leaf condition model and the crop/type model ([field-classifier.md](field-classifier.md)). Leaf blight, leaf curl and verticillium wilt have no matching class and are not used.
 
 ### Checked
 
@@ -282,7 +282,7 @@ Process note: the PMC figure page wrote to the user's clipboard when I clicked i
 - Images: 3,500 originals (24,500 after augmentation). Per-class counts are not stated.
 - Classes: Healthy Leaf, Early Blight Leaf, Late Blight Leaf, Leaf Curl Leaf, Bushy Stunt Leaf, Healthy Fruit, Target Spot Fruit (7)
 - License: CC BY 4.0
-- Used to train the current models: No
+- Used to train the current models: No. Looked at (14 sample images, two per class): every one is a detached leaf on white card, not a field photo, whatever the page says.
 - Caveats: The same content is published under two DOIs (Feb 2026 and May 2026), so download one only. There are no boxes. Use the originals only, since the augmented copies leak. The capture location within Bangladesh is unspecified. The fruit disease labels (only Target Spot) are thin.
 
 ## Taiwan Tomato Leaves dataset (part of 'Dataset of Tomato Leaves', Huang & Chang)
@@ -293,7 +293,7 @@ Process note: the PMC figure page wrote to the user's clipboard when I clicked i
 - Images: 622 originals (Bacterial spot 100, Black leaf mold 67, Gray leaf spot 84, Healthy 106, Late blight 98, Powdery mildew 157, as reported in secondary listings) and 4,976 augmented. The same record also holds a 14,531-image PlantVillage-derived part.
 - Classes: Bacterial spot, Black leaf mold (Pseudocercospora fuligena), Gray leaf spot (Stemphylium), Healthy, Late blight, Powdery mildew (6)
 - License: CC BY 4.0
-- Used to train the current models: No
+- Used to train the current models: Yes: the originals of healthy, bacterial spot and late blight, in the tomato-leaf condition model and the crop/type model ([field-classifier.md](field-classifier.md)).
 - Caveats: Small and old (2020). All images are resized to 227x227, which is too low-resolution for close-up lesion detail. Do not import the PlantVillage-derived half; it duplicates PlantVillage, which CropSCOUT already uses. Augmented copies (rotations, mirrors, brightness) must stay grouped with their originals. The per-class counts come from a secondary listing, not the Mendeley page.
 
 ## Tomato Leaf Image Dataset (TLID/PTLID), Paraná, Brazil greenhouses

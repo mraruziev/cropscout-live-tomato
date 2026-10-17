@@ -65,6 +65,17 @@ Other useful options:
 - `--keep-y4m`: keep the clips, which are about 93 MB each and deleted by default
 - `--keep-server`: leave `php -S` running so the next run reuses it
 
+## Real video as the camera
+
+`live-video.mjs` plays a real video to the live page and records what it shows over time, for a check on moving, handheld footage rather than a still fixture:
+
+```sh
+python -I make_video_camera.py farm.webm farm.y4m --side 480 --fps 10 --start 20 --seconds 60   # centre square of each frame
+node live-video.mjs --clip farm.y4m --seconds 60 --url http://localhost:8080 --query detector=1 --out .out/farm
+```
+
+It writes `timeline.jsonl` (the live label, mode and every leaf's state, every `--poll-ms`) and `frames/NNNNN.png` (the camera view with its overlay, every `--shot-ms`). The page must already be served (`scripts/serve.sh`). Chrome loops the clip, so keep `--seconds` within the clip.
+
 ## Fake camera colour
 
 Chrome reads Y4M as limited-range BT.601 4:2:0, whatever the header says. The generator encodes that way by default. `node live-e2e.mjs --calibrate` measures this with a colour-patch clip, and every fixture also reports the camera-vs-PNG colour error in the Diagnostics table. Expect well under 1 level of error per channel, apart from chroma blur at sharp colour edges.

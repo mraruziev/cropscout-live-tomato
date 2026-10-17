@@ -14,8 +14,10 @@ crop/type model (YOLO26n classifier, 9 classes)
   │  smoothed over frames; needs ≥ 60 % confidence and ≥ 10 % margin, and not "Other"
   ▼
 condition model for that crop and plant part
-  │  tomato → general model (YOLO26n, 46 classes, only tomato classes are compared)
+  │  tomato leaf → tomato-leaf specialist (YOLO26n, trained on field leaves too)
+  │  tomato fruit, apple, cucumber fruit, lemon fruit → general model (YOLO26n, 46 classes)
   │  cucumber leaf → specialist · lemon leaf → guarded hybrid
+  │  only the classes of that crop and plant part are compared
   │  smoothed over frames; 4 safeguards (confidence, margin, family support, healthy separation)
   ▼
 vote: show a verdict when 3 of the last 4 frames agree · hold it while 2 of 4 still do
@@ -31,6 +33,7 @@ With the optional **leaf finder** (`/vision/?detector=1`), a YOLO26n detector fi
 |---|---|---|---|---|
 | Crop / type | YOLO26n classifier | 1×3×224×224, RGB, 0–1 | 9 class scores (softmax inside the model) | 6 MB |
 | General condition | YOLO26n classifier | same | 46 class scores | 6 MB |
+| Tomato-leaf specialist | YOLO26n classifier | same | the same 46 class scores; only the tomato-leaf ones are compared | 6 MB |
 | Cucumber-leaf specialist | YOLO26s classifier | same | 54 class scores | 22 MB |
 | Lemon-leaf specialist | YOLO26s classifier | same | 20 class scores | 22 MB |
 | Leaf finder (optional) | YOLO26n detector | 1×3×320×320, RGB, 0–1 | 1×300×6 boxes: x1, y1, x2, y2, score, class (no NMS step) | 10 MB |
@@ -64,6 +67,7 @@ With the optional **leaf finder** (`/vision/?detector=1`), a YOLO26n detector fi
 - The minimum cycle is 350 ms. Model work therefore never takes more than half the main thread, and the page stays responsive on slow phones.
 - The rest is capped at 1 s, so one slow frame cannot freeze the loop.
 - It then waits for the camera's next new frame, so the same frame is never analysed twice.
+- The tomato-leaf specialist (6 MB) loads with the base models, because tomato leaves are the main use.
 - The cucumber and lemon specialists (22 MB each) download in the background the first time that crop is seen. Until they are ready, the label says it is loading the condition model; the camera and the crop check keep running.
 - If the page goes to the background, the camera stops.
 
@@ -79,6 +83,7 @@ With the optional **leaf finder** (`/vision/?detector=1`), a YOLO26n detector fi
 | `vision/private/model-metadata.json` | Class lists, thresholds, model hashes, advice text |
 | `vision/private/dataset-provenance.json` | Datasets and licences behind each model |
 | `tools/detector/` | Build the leaf finder's box dataset, train it and export it ([leaf-finder.md](leaf-finder.md)) |
+| `tools/classifier/` | Build the field leaf set, fine-tune the tomato-leaf and crop/type models, export them, score them on real photos ([field-classifier.md](field-classifier.md)) |
 | `vision/vendor/` | onnxruntime-web (WebAssembly build) |
 
 ## Test hook

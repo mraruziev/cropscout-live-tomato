@@ -9,11 +9,15 @@ const METADATA_ENDPOINT = 'model.php?model=metadata';
 const SPECIALIST_ENDPOINTS = Object.freeze({
     'cucumber-leaf': 'model.php?model=cucumber-leaf',
     'lemon-leaf': 'model.php?model=lemon-leaf',
+    'tomato-leaf': 'model.php?model=tomato-leaf',
 });
 const SPECIALIST_FAMILIES = Object.freeze({
     'cucumber-leaf': 'Cucumber_leaf',
     'lemon-leaf': 'Lemon_leaf',
+    'tomato-leaf': 'Tomato_leaf',
 });
+// Loaded with the base models instead of on first use: tomato leaves are the main use.
+const EAGER_SPECIALISTS = Object.freeze(['tomato-leaf']);
 const LEMON_HYBRID_POLICY_ID = 'lemon_disease_only_preserve_base_healthy_v1';
 const LEMON_SPECIALIST_MIN_CONFIDENCE = 0.70;
 const IMAGE_SIZE = 224;
@@ -1548,8 +1552,8 @@ function normalizeDiseaseClasses(entries, schemaVersion, field) {
 
 function normalizeConditionSpecialists(value, schemaVersion, cropViewClasses) {
     if (value === undefined) return Object.freeze([]);
-    if (!Array.isArray(value) || value.length > 2) {
-        throw new VisionError('metadata', 'Model metadata condition_specialists must contain at most two supported specialists.');
+    if (!Array.isArray(value) || value.length > Object.keys(SPECIALIST_FAMILIES).length) {
+        throw new VisionError('metadata', 'Model metadata condition_specialists must contain at most one entry per supported specialist.');
     }
     const seen = new Set();
     return Object.freeze(value.map((entry, index) => {
@@ -1844,12 +1848,21 @@ async function createRuntime() {
         elements.cameraGuideCopy.textContent = 'Each leaf or fruit inside this square is found and checked';
     }
 
+    const runtime = Object.freeze({ metadata, cropViewSession, diseaseSession, leafDetector });
+    // A failed eager load is kept like any specialist failure: that crop then
+    // reports its condition model as unavailable, it never falls back.
+    for (const specialist of metadata.conditionSpecialists) {
+        if (!EAGER_SPECIALISTS.includes(specialist.id)) continue;
+        const [crop, organ] = specialist.families[0].split('_');
+        await resolveConditionModel(runtime, crop, organ).catch(() => {});
+    }
+
     setModelState(
         'ready',
         `${metadata.cropViewClasses.length} crop views · ${routedConditionCount(metadata)} conditions${leafFinderNote}`
     );
 
-    return Object.freeze({ metadata, cropViewSession, diseaseSession, leafDetector });
+    return runtime;
 }
 
 function conditionSpecialistForFamily(runtime, family) {

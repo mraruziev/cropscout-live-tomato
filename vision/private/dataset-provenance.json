@@ -1,294 +1,349 @@
 {
- "project": "CropSCOUT Live",
- "note": "Public datasets behind each model and their licences. Image counts are unique selected images across train, validation and test.",
- "models": {
-  "crop_view": {
-   "classes": 9,
-   "images": 21728,
-   "split_counts": {
-    "train": 17227,
-    "val": 4501
-   },
-   "images_per_source": {
-    "abcgmp_field_reviewed": 39,
-    "apple_detection": 735,
-    "apple_leaf": 912,
-    "bdlemonleaf": 453,
-    "citrus": 603,
-    "citrusleafvision": 629,
-    "cucumber": 1274,
-    "cucumber_leaf_kaggle": 1268,
-    "cucumber_orchard": 481,
-    "fruits360": 6565,
-    "lemon_field": 1646,
-    "lemon_lld": 7,
-    "lemon_roboflow_v4": 1330,
-    "lemon_smz8ffbthy": 527,
-    "plantdoc": 3544,
-    "plantvillage": 765,
-    "plantvillage_official": 476,
-    "tomato_leaf": 474
-   },
-   "source_licenses": {
-    "abcgmp_field_reviewed": "CC BY 4.0",
-    "apple_detection": "CC BY 4.0",
-    "apple_leaf": "CC BY 4.0",
-    "bdlemonleaf": "CC BY 4.0",
-    "citrus": "CC BY 4.0",
-    "citrusleafvision": "CC BY 4.0",
-    "cucumber": "CC BY 4.0",
-    "cucumber_leaf_kaggle": "Apache-2.0",
-    "cucumber_orchard": "CC BY 4.0",
-    "fruits360": "CC BY-SA 4.0",
-    "lemon_field": "CC BY 4.0",
-    "lemon_lld": "CC BY 4.0",
-    "lemon_roboflow_v4": "MIT",
-    "lemon_smz8ffbthy": "CC BY 4.0",
-    "plantdoc": "CC BY 4.0",
-    "plantvillage": "CC BY-SA 3.0",
-    "plantvillage_official": "CC BY-SA 3.0",
-    "tomato_leaf": "CC BY 4.0"
-   }
+  "project": "CropSCOUT Live",
+  "note": "Public datasets behind each model and their licences. Image counts are unique selected images across train, validation and test.",
+  "models": {
+    "crop_view": {
+      "classes": 9,
+      "images": 17295,
+      "split_counts": {
+        "train": 15841,
+        "val": 3390
+      },
+      "images_per_source": {
+        "abcgmp_field_reviewed": 33,
+        "apple_detection": 735,
+        "apple_leaf": 912,
+        "bdlemonleaf": 453,
+        "ccmt": 260,
+        "citrus": 603,
+        "citrusleafvision": 453,
+        "cucumber": 1274,
+        "cucumber_leaf_kaggle": 793,
+        "cucumber_orchard": 263,
+        "fruits360": 6565,
+        "lemon_field": 451,
+        "lemon_lld": 7,
+        "plantdoc": 1998,
+        "plantvillage": 765,
+        "plantvillage_official": 476,
+        "sichuan_greenhouse": 260,
+        "slif_tomato": 260,
+        "taiwan_tomato": 260,
+        "tomato_leaf": 474
+      },
+      "source_licenses": {
+        "abcgmp_field_reviewed": "CC BY 4.0",
+        "apple_detection": "CC BY 4.0",
+        "apple_leaf": "CC BY 4.0",
+        "bdlemonleaf": "CC BY 4.0",
+        "ccmt": "CC BY 4.0",
+        "citrus": "CC BY 4.0",
+        "citrusleafvision": "CC BY 4.0",
+        "cucumber": "CC BY 4.0",
+        "cucumber_leaf_kaggle": "Apache-2.0",
+        "cucumber_orchard": "CC BY 4.0",
+        "fruits360": "CC BY-SA 4.0",
+        "lemon_field": "CC BY 4.0",
+        "lemon_lld": "CC BY 4.0",
+        "plantdoc": "CC BY 4.0",
+        "plantvillage": "CC BY-SA 3.0",
+        "plantvillage_official": "CC BY-SA 3.0",
+        "sichuan_greenhouse": "CC BY 4.0",
+        "slif_tomato": "CC BY 4.0",
+        "taiwan_tomato": "CC BY 4.0",
+        "tomato_leaf": "CC BY 4.0"
+      },
+      "note": "Fine-tuned with field tomato leaves (CCMT, SLIF-Tomato, Sichuan greenhouse, Taiwan: whole-photo squares and leaf-finder crops), with the other crops' field leaves repeated so a plant background is not read as tomato."
+    },
+    "condition_general": {
+      "classes": 54,
+      "images": 32199,
+      "split_counts": {
+        "test": 1568,
+        "train": 22494,
+        "val": 8137
+      },
+      "images_per_source": {
+        "apple_detection": 800,
+        "apple_leaf": 3653,
+        "bdlemonleaf": 2646,
+        "citrus": 759,
+        "citrusleafvision": 1238,
+        "cucumber": 1279,
+        "cucumber_leaf_kaggle": 3399,
+        "fruits360": 2578,
+        "lemon_field": 7128,
+        "lemon_lld": 7,
+        "lemon_roboflow_v4": 1121,
+        "plantdoc": 3514,
+        "plantvillage": 765,
+        "plantvillage_official": 1452,
+        "tomato_leaf": 1860
+      },
+      "source_licenses": {
+        "apple_detection": "CC BY 4.0",
+        "apple_leaf": "CC BY 4.0",
+        "bdlemonleaf": "CC BY 4.0",
+        "citrus": "CC BY 4.0",
+        "citrusleafvision": "CC BY 4.0",
+        "cucumber": "CC BY 4.0",
+        "cucumber_leaf_kaggle": "Apache-2.0",
+        "fruits360": "CC BY-SA 4.0",
+        "lemon_field": "CC BY 4.0",
+        "lemon_lld": "CC BY 4.0",
+        "lemon_roboflow_v4": "MIT",
+        "plantdoc": "CC BY 4.0",
+        "plantvillage": "CC BY-SA 3.0",
+        "plantvillage_official": "CC BY-SA 3.0",
+        "tomato_leaf": "CC BY 4.0"
+      }
+    },
+    "cucumber_leaf_specialist": {
+      "classes": 54,
+      "images": 31078,
+      "split_counts": {
+        "test": 651,
+        "train": 22456,
+        "val": 7971
+      },
+      "images_per_source": {
+        "apple_detection": 800,
+        "apple_leaf": 3653,
+        "bdlemonleaf": 2646,
+        "citrus": 759,
+        "citrusleafvision": 1238,
+        "cucumber": 1279,
+        "cucumber_leaf_kaggle": 3399,
+        "fruits360": 2578,
+        "lemon_field": 7128,
+        "lemon_lld": 7,
+        "plantdoc": 3514,
+        "plantvillage": 765,
+        "plantvillage_official": 1452,
+        "tomato_leaf": 1860
+      },
+      "source_licenses": {
+        "apple_detection": "CC BY 4.0",
+        "apple_leaf": "CC BY 4.0",
+        "bdlemonleaf": "CC BY 4.0",
+        "citrus": "CC BY 4.0",
+        "citrusleafvision": "CC BY 4.0",
+        "cucumber": "CC BY 4.0",
+        "cucumber_leaf_kaggle": "Apache-2.0",
+        "fruits360": "CC BY-SA 4.0",
+        "lemon_field": "CC BY 4.0",
+        "lemon_lld": "CC BY 4.0",
+        "plantdoc": "CC BY 4.0",
+        "plantvillage": "CC BY-SA 3.0",
+        "plantvillage_official": "CC BY-SA 3.0",
+        "tomato_leaf": "CC BY 4.0"
+      }
+    },
+    "lemon_leaf_specialist": {
+      "classes": 20,
+      "images": 14686,
+      "split_counts": {
+        "test": 1998,
+        "train": 11098,
+        "val": 1590
+      },
+      "images_per_source": {
+        "bdlemonleaf": 2645,
+        "citrus": 609,
+        "citrusleafvision": 1222,
+        "lemon_field": 8201,
+        "lemon_lld": 1,
+        "lemon_roboflow_v4": 1134,
+        "lemon_smz8ffbthy": 874
+      },
+      "source_licenses": {
+        "bdlemonleaf": "CC BY 4.0",
+        "citrus": "CC BY 4.0",
+        "citrusleafvision": "CC BY 4.0",
+        "lemon_field": "CC BY 4.0",
+        "lemon_lld": "CC BY 4.0",
+        "lemon_roboflow_v4": "MIT",
+        "lemon_smz8ffbthy": "CC BY 4.0"
+      }
+    },
+    "leaf_detector": {
+      "classes": 2,
+      "images": 4641,
+      "boxes": {
+        "tomato_fruit": 877,
+        "tomato_leaf": 70117
+      },
+      "split_counts": {
+        "train": 3682,
+        "val": 620,
+        "test": 339
+      },
+      "split_rule": "by source photo (SLIF base photo ID, TFDD photo number, PlantDoc file) or capture day (Sichuan); near-duplicate photos found by perceptual hash share a split",
+      "images_per_source": {
+        "plantdoc": 738,
+        "sichuan_greenhouse": 551,
+        "slif_tomato": 2670,
+        "tfdd": 682
+      },
+      "source_licenses": {
+        "plantdoc": "CC BY 4.0",
+        "sichuan_greenhouse": "CC BY 4.0",
+        "slif_tomato": "CC BY 4.0",
+        "tfdd": "CC BY 4.0"
+      }
+    },
+    "tomato_leaf_specialist": {
+      "classes": 46,
+      "note": "Fine-tuned from the general condition model for tomato leaves. The general model's tomato box crops from the Bangladesh leaf set were left out except black spot (their class IDs were inferred); PlantVillage close-ups and field leaves from CCMT, SLIF-Tomato, the Sichuan greenhouse set and the Taiwan set (whole-photo squares and leaf-finder crops) were added.",
+      "images": 25967,
+      "split_counts": {
+        "train": 21296,
+        "val": 5099
+      },
+      "split_rule": "field photos by source photo (SLIF base photo ID), capture day (Sichuan) or a hash of the photo group; near-duplicates by perceptual hash share a split; photos matching a test fixture are dropped",
+      "images_per_source": {
+        "apple_detection": 800,
+        "apple_leaf": 3900,
+        "bdlemonleaf": 3972,
+        "ccmt": 2404,
+        "citrus": 845,
+        "cucumber": 1865,
+        "fruits360": 2578,
+        "plantvillage": 2748,
+        "plantvillage_official": 2355,
+        "sichuan_greenhouse": 895,
+        "slif_tomato": 1896,
+        "taiwan_tomato": 547,
+        "tomato_leaf": 1162
+      },
+      "source_licenses": {
+        "apple_detection": "CC BY 4.0",
+        "apple_leaf": "CC BY 4.0",
+        "bdlemonleaf": "CC BY 4.0",
+        "ccmt": "CC BY 4.0",
+        "citrus": "CC BY 4.0",
+        "cucumber": "CC BY 4.0",
+        "fruits360": "CC BY-SA 4.0",
+        "plantvillage": "CC BY-SA 3.0",
+        "plantvillage_official": "CC BY-SA 3.0",
+        "sichuan_greenhouse": "CC BY 4.0",
+        "slif_tomato": "CC BY 4.0",
+        "taiwan_tomato": "CC BY 4.0",
+        "tomato_leaf": "CC BY 4.0"
+      }
+    }
   },
-  "condition_general": {
-   "classes": 54,
-   "images": 32199,
-   "split_counts": {
-    "test": 1568,
-    "train": 22494,
-    "val": 8137
-   },
-   "images_per_source": {
-    "apple_detection": 800,
-    "apple_leaf": 3653,
-    "bdlemonleaf": 2646,
-    "citrus": 759,
-    "citrusleafvision": 1238,
-    "cucumber": 1279,
-    "cucumber_leaf_kaggle": 3399,
-    "fruits360": 2578,
-    "lemon_field": 7128,
-    "lemon_lld": 7,
-    "lemon_roboflow_v4": 1121,
-    "plantdoc": 3514,
-    "plantvillage": 765,
-    "plantvillage_official": 1452,
-    "tomato_leaf": 1860
-   },
-   "source_licenses": {
-    "apple_detection": "CC BY 4.0",
-    "apple_leaf": "CC BY 4.0",
-    "bdlemonleaf": "CC BY 4.0",
-    "citrus": "CC BY 4.0",
-    "citrusleafvision": "CC BY 4.0",
-    "cucumber": "CC BY 4.0",
-    "cucumber_leaf_kaggle": "Apache-2.0",
-    "fruits360": "CC BY-SA 4.0",
-    "lemon_field": "CC BY 4.0",
-    "lemon_lld": "CC BY 4.0",
-    "lemon_roboflow_v4": "MIT",
-    "plantdoc": "CC BY 4.0",
-    "plantvillage": "CC BY-SA 3.0",
-    "plantvillage_official": "CC BY-SA 3.0",
-    "tomato_leaf": "CC BY 4.0"
-   }
-  },
-  "cucumber_leaf_specialist": {
-   "classes": 54,
-   "images": 31078,
-   "split_counts": {
-    "test": 651,
-    "train": 22456,
-    "val": 7971
-   },
-   "images_per_source": {
-    "apple_detection": 800,
-    "apple_leaf": 3653,
-    "bdlemonleaf": 2646,
-    "citrus": 759,
-    "citrusleafvision": 1238,
-    "cucumber": 1279,
-    "cucumber_leaf_kaggle": 3399,
-    "fruits360": 2578,
-    "lemon_field": 7128,
-    "lemon_lld": 7,
-    "plantdoc": 3514,
-    "plantvillage": 765,
-    "plantvillage_official": 1452,
-    "tomato_leaf": 1860
-   },
-   "source_licenses": {
-    "apple_detection": "CC BY 4.0",
-    "apple_leaf": "CC BY 4.0",
-    "bdlemonleaf": "CC BY 4.0",
-    "citrus": "CC BY 4.0",
-    "citrusleafvision": "CC BY 4.0",
-    "cucumber": "CC BY 4.0",
-    "cucumber_leaf_kaggle": "Apache-2.0",
-    "fruits360": "CC BY-SA 4.0",
-    "lemon_field": "CC BY 4.0",
-    "lemon_lld": "CC BY 4.0",
-    "plantdoc": "CC BY 4.0",
-    "plantvillage": "CC BY-SA 3.0",
-    "plantvillage_official": "CC BY-SA 3.0",
-    "tomato_leaf": "CC BY 4.0"
-   }
-  },
-  "lemon_leaf_specialist": {
-   "classes": 20,
-   "images": 14686,
-   "split_counts": {
-    "test": 1998,
-    "train": 11098,
-    "val": 1590
-   },
-   "images_per_source": {
-    "bdlemonleaf": 2645,
-    "citrus": 609,
-    "citrusleafvision": 1222,
-    "lemon_field": 8201,
-    "lemon_lld": 1,
-    "lemon_roboflow_v4": 1134,
-    "lemon_smz8ffbthy": 874
-   },
-   "source_licenses": {
-    "bdlemonleaf": "CC BY 4.0",
-    "citrus": "CC BY 4.0",
-    "citrusleafvision": "CC BY 4.0",
-    "lemon_field": "CC BY 4.0",
-    "lemon_lld": "CC BY 4.0",
-    "lemon_roboflow_v4": "MIT",
-    "lemon_smz8ffbthy": "CC BY 4.0"
-   }
-  },
-  "leaf_detector": {
-   "classes": 2,
-   "images": 4641,
-   "boxes": {
-    "tomato_fruit": 877,
-    "tomato_leaf": 70117
-   },
-   "split_counts": {
-    "train": 3682,
-    "val": 620,
-    "test": 339
-   },
-   "split_rule": "by source photo (SLIF base photo ID, TFDD photo number, PlantDoc file) or capture day (Sichuan); near-duplicate photos found by perceptual hash share a split",
-   "images_per_source": {
-    "plantdoc": 738,
-    "sichuan_greenhouse": 551,
-    "slif_tomato": 2670,
-    "tfdd": 682
-   },
-   "source_licenses": {
-    "plantdoc": "CC BY 4.0",
-    "sichuan_greenhouse": "CC BY 4.0",
-    "slif_tomato": "CC BY 4.0",
-    "tfdd": "CC BY 4.0"
-   }
+  "sources": {
+    "abcgmp_field_reviewed": {
+      "title": "abcgmp_field_reviewed",
+      "license": "CC BY 4.0"
+    },
+    "apple_detection": {
+      "title": "Apple detection dataset",
+      "license": "CC BY 4.0",
+      "url": "https://data.mendeley.com/datasets/6m3zvvmm4x/1"
+    },
+    "apple_leaf": {
+      "title": "Apple leaf disease dataset",
+      "license": "CC BY 4.0",
+      "url": "https://data.mendeley.com/datasets/9m2dcb5mmr/3"
+    },
+    "bdlemonleaf": {
+      "title": "BDLemonLeaf v6",
+      "license": "CC BY 4.0",
+      "url": "https://data.mendeley.com/datasets/643f5bbc2t/6"
+    },
+    "ccmt": {
+      "title": "CCMT: Dataset for Crop Pest and Disease Detection (Mensah Kwabena et al. 2023), raw tomato healthy and septoria folders",
+      "license": "CC BY 4.0",
+      "url": "https://data.mendeley.com/datasets/bwh3zbpkpv/1"
+    },
+    "citrus": {
+      "title": "Citrus Fruits and Leaves Dataset v2",
+      "license": "CC BY 4.0",
+      "url": "https://data.mendeley.com/datasets/3f83gxmv57/2"
+    },
+    "citrusleafvision": {
+      "title": "CitrusLeafVision",
+      "license": "CC BY 4.0",
+      "url": "https://data.mendeley.com/datasets/4dmgghmj3n/1"
+    },
+    "cucumber": {
+      "title": "Cucumber disease dataset",
+      "license": "CC BY 4.0",
+      "url": "https://data.mendeley.com/datasets/y6d3z6f8z9/1"
+    },
+    "cucumber_leaf_kaggle": {
+      "title": "Cucumber Leaf Disease Dataset",
+      "license": "Apache-2.0",
+      "url": "https://www.kaggle.com/datasets/kaushigihanml/cucumber-leaf-disease-dataset"
+    },
+    "cucumber_orchard": {
+      "title": "cucumber_orchard",
+      "license": "CC BY 4.0"
+    },
+    "fruits360": {
+      "title": "Fruits-360",
+      "license": "CC BY-SA 4.0",
+      "url": "https://github.com/fruits-360/fruits-360-100x100"
+    },
+    "lemon_field": {
+      "title": "Large-Scale Lemon Leaf Disease and Pest Image Data",
+      "license": "CC BY 4.0"
+    },
+    "lemon_lld": {
+      "title": "lemon_lld",
+      "license": "CC BY 4.0"
+    },
+    "lemon_roboflow_v4": {
+      "title": "Lemon Leaf Diseases v4",
+      "license": "MIT",
+      "url": "https://universe.roboflow.com/object-detection-eh4ut/lemon-leaf-diseases/dataset/4"
+    },
+    "lemon_smz8ffbthy": {
+      "title": "Lemon Leaf Dataset: Images of Citrus Diseases and Healthy Leaves v3",
+      "license": "CC BY 4.0",
+      "url": "https://data.mendeley.com/datasets/smz8ffbthy/3"
+    },
+    "plantdoc": {
+      "title": "PlantDoc",
+      "license": "CC BY 4.0",
+      "url": "https://github.com/pratikkayal/PlantDoc-Object-Detection-Dataset"
+    },
+    "plantvillage": {
+      "title": "PlantVillage",
+      "license": "CC BY-SA 3.0",
+      "url": "https://github.com/spMohanty/PlantVillage-Dataset"
+    },
+    "plantvillage_official": {
+      "title": "PlantVillage (official release)",
+      "license": "CC BY-SA 3.0",
+      "url": "https://github.com/spMohanty/PlantVillage-Dataset"
+    },
+    "sichuan_greenhouse": {
+      "title": "Tomato Disease Dataset (Sichuan greenhouse, Liu et al. 2025)",
+      "license": "CC BY 4.0",
+      "url": "https://data.mendeley.com/datasets/c2x8rynybg/1"
+    },
+    "slif_tomato": {
+      "title": "SLIF-Tomato: Sri Lankan In-Field Tomato Dataset (George et al. 2026)",
+      "license": "CC BY 4.0",
+      "url": "https://www.kaggle.com/datasets/romiyalgeorge/slif-tomato-dataset"
+    },
+    "taiwan_tomato": {
+      "title": "Dataset of Tomato Leaves, Taiwan part (Huang & Chang 2020)",
+      "license": "CC BY 4.0",
+      "url": "https://data.mendeley.com/datasets/ngdgg79rzb/1"
+    },
+    "tfdd": {
+      "title": "TFDD: Tomato Fruit Disease Detection dataset v3",
+      "license": "CC BY 4.0",
+      "url": "https://data.mendeley.com/datasets/ktfnhjspjn/3"
+    },
+    "tomato_leaf": {
+      "title": "Tomato Leaf Dataset: multiclass disease detection and classification",
+      "license": "CC BY 4.0",
+      "url": "https://data.mendeley.com/datasets/bpfd9cns5g/2"
+    }
   }
- },
- "sources": {
-  "abcgmp_field_reviewed": {
-   "title": "abcgmp_field_reviewed",
-   "license": "CC BY 4.0"
-  },
-  "apple_detection": {
-   "title": "Apple detection dataset",
-   "license": "CC BY 4.0",
-   "url": "https://data.mendeley.com/datasets/6m3zvvmm4x/1"
-  },
-  "apple_leaf": {
-   "title": "Apple leaf disease dataset",
-   "license": "CC BY 4.0",
-   "url": "https://data.mendeley.com/datasets/9m2dcb5mmr/3"
-  },
-  "bdlemonleaf": {
-   "title": "BDLemonLeaf v6",
-   "license": "CC BY 4.0",
-   "url": "https://data.mendeley.com/datasets/643f5bbc2t/6"
-  },
-  "citrus": {
-   "title": "Citrus Fruits and Leaves Dataset v2",
-   "license": "CC BY 4.0",
-   "url": "https://data.mendeley.com/datasets/3f83gxmv57/2"
-  },
-  "citrusleafvision": {
-   "title": "CitrusLeafVision",
-   "license": "CC BY 4.0",
-   "url": "https://data.mendeley.com/datasets/4dmgghmj3n/1"
-  },
-  "cucumber": {
-   "title": "Cucumber disease dataset",
-   "license": "CC BY 4.0",
-   "url": "https://data.mendeley.com/datasets/y6d3z6f8z9/1"
-  },
-  "cucumber_leaf_kaggle": {
-   "title": "Cucumber Leaf Disease Dataset",
-   "license": "Apache-2.0",
-   "url": "https://www.kaggle.com/datasets/kaushigihanml/cucumber-leaf-disease-dataset"
-  },
-  "cucumber_orchard": {
-   "title": "cucumber_orchard",
-   "license": "CC BY 4.0"
-  },
-  "fruits360": {
-   "title": "Fruits-360",
-   "license": "CC BY-SA 4.0",
-   "url": "https://github.com/fruits-360/fruits-360-100x100"
-  },
-  "lemon_field": {
-   "title": "Large-Scale Lemon Leaf Disease and Pest Image Data",
-   "license": "CC BY 4.0"
-  },
-  "lemon_lld": {
-   "title": "lemon_lld",
-   "license": "CC BY 4.0"
-  },
-  "lemon_roboflow_v4": {
-   "title": "Lemon Leaf Diseases v4",
-   "license": "MIT",
-   "url": "https://universe.roboflow.com/object-detection-eh4ut/lemon-leaf-diseases/dataset/4"
-  },
-  "lemon_smz8ffbthy": {
-   "title": "Lemon Leaf Dataset: Images of Citrus Diseases and Healthy Leaves v3",
-   "license": "CC BY 4.0",
-   "url": "https://data.mendeley.com/datasets/smz8ffbthy/3"
-  },
-  "plantdoc": {
-   "title": "PlantDoc",
-   "license": "CC BY 4.0",
-   "url": "https://github.com/pratikkayal/PlantDoc-Object-Detection-Dataset"
-  },
-  "plantvillage": {
-   "title": "PlantVillage",
-   "license": "CC BY-SA 3.0",
-   "url": "https://github.com/spMohanty/PlantVillage-Dataset"
-  },
-  "plantvillage_official": {
-   "title": "PlantVillage (official release)",
-   "license": "CC BY-SA 3.0",
-   "url": "https://github.com/spMohanty/PlantVillage-Dataset"
-  },
-  "sichuan_greenhouse": {
-   "title": "Tomato Disease Dataset (Sichuan greenhouse, Liu et al. 2025)",
-   "license": "CC BY 4.0",
-   "url": "https://data.mendeley.com/datasets/c2x8rynybg/1"
-  },
-  "slif_tomato": {
-   "title": "SLIF-Tomato: Sri Lankan In-Field Tomato Dataset (George et al. 2026)",
-   "license": "CC BY 4.0",
-   "url": "https://www.kaggle.com/datasets/romiyalgeorge/slif-tomato-dataset"
-  },
-  "tfdd": {
-   "title": "TFDD: Tomato Fruit Disease Detection dataset v3",
-   "license": "CC BY 4.0",
-   "url": "https://data.mendeley.com/datasets/ktfnhjspjn/3"
-  },
-  "tomato_leaf": {
-   "title": "Tomato Leaf Dataset: multiclass disease detection and classification",
-   "license": "CC BY 4.0",
-   "url": "https://data.mendeley.com/datasets/bpfd9cns5g/2"
-  }
- }
 }

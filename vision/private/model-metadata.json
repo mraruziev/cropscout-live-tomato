@@ -47,8 +47,8 @@
       "Tomato_fruit",
       "Tomato_leaf"
     ],
-    "checkpoint_sha256": "d9eff381134c1e9825d96058b7b776eb0a792097e207b5fa01a6692f54455a50",
-    "onnx_sha256": "fe7695b34141ca395305ca56eb0537b6930c3971104653d27ad4ba1b2a53ae18"
+    "checkpoint_sha256": "dcf1dac8538deda837d6ee5210b87d835e617de1986e38fa3e4409aad91e30c9",
+    "onnx_sha256": "228b6659adaf37b454d752e7791f480eefc9060bb7628ca458d2e5d29d67f502"
   },
   "disease": {
     "classes": [
@@ -2103,6 +2103,790 @@
       "onnx_sha256": "bfa9ff009ee6bd872c216dc60d00567a066a49d3c6ba56b1cb13e85d4a205c01",
       "routing_policy_id": "lemon_disease_only_preserve_base_healthy_v1",
       "specialist_min_confidence": 0.7
+    },
+    {
+      "id": "tomato-leaf",
+      "families": [
+        "Tomato_leaf"
+      ],
+      "classes": [
+        {
+          "label": "Apple_fruit_healthy",
+          "crop": "Apple",
+          "crop_display": "Apple",
+          "crop_kind": "fruit",
+          "organ": "fruit",
+          "condition": null,
+          "diagnosis": "Healthy Apple fruit",
+          "healthy": true,
+          "cause": "No disease signs detected.",
+          "urgency": "none",
+          "actions": [
+            "Keep scouting on your normal schedule.",
+            "Avoid overhead watering late in the day."
+          ]
+        },
+        {
+          "label": "Apple_fruit_visible_damage",
+          "crop": "Apple",
+          "crop_display": "Apple",
+          "crop_kind": "fruit",
+          "organ": "fruit",
+          "condition": "visible damage",
+          "diagnosis": "Apple fruit: visible damage",
+          "healthy": false,
+          "cause": "Visible fruit damage is present, but one photo cannot separate infection from bruising, sun injury, insect feeding, or storage damage.",
+          "urgency": "routine",
+          "actions": [
+            "Inspect several fruit and photograph the damaged area in sharp daylight.",
+            "Remove badly rotted fruit and sanitize harvest or storage surfaces.",
+            "Confirm the cause before applying any pesticide; visible damage alone is not a spray recommendation."
+          ]
+        },
+        {
+          "label": "Apple_leaf_alternaria_leaf_blotch",
+          "crop": "Apple",
+          "crop_display": "Apple",
+          "crop_kind": "fruit",
+          "organ": "leaf",
+          "condition": "alternaria leaf blotch",
+          "diagnosis": "Apple leaf: alternaria leaf blotch",
+          "healthy": false,
+          "cause": "Foliar blotch pathogen. Irregular merging lesions.",
+          "urgency": "routine",
+          "actions": [
+            "Remove affected leaves and debris.",
+            "Protectant fungicide during wet periods.",
+            "Improve airflow; rotate."
+          ]
+        },
+        {
+          "label": "Apple_leaf_apple_mosaic_virus",
+          "crop": "Apple",
+          "crop_display": "Apple",
+          "crop_kind": "fruit",
+          "organ": "leaf",
+          "condition": "apple mosaic virus",
+          "diagnosis": "Apple leaf: apple mosaic virus",
+          "healthy": false,
+          "cause": "Plant virus. No cure; spread mechanically and by insect vectors.",
+          "urgency": "urgent",
+          "actions": [
+            "Remove and destroy infected plants -- they are a reservoir.",
+            "Disinfect hands and tools between plants.",
+            "Use resistant varieties and control insect vectors."
+          ]
+        },
+        {
+          "label": "Apple_leaf_apple_scab",
+          "crop": "Apple",
+          "crop_display": "Apple",
+          "crop_kind": "fruit",
+          "organ": "leaf",
+          "condition": "apple scab",
+          "diagnosis": "Apple leaf: apple scab",
+          "healthy": false,
+          "cause": "Scab fungus. Corky or olive-brown lesions on leaves and fruit.",
+          "urgency": "routine",
+          "actions": [
+            "Clear fallen leaves to break the overwintering cycle.",
+            "Protectant fungicide during the early-season infection window.",
+            "Resistant cultivars when replanting."
+          ]
+        },
+        {
+          "label": "Apple_leaf_black_rot",
+          "crop": "Apple",
+          "crop_display": "Apple",
+          "crop_kind": "fruit",
+          "organ": "leaf",
+          "condition": "black rot",
+          "diagnosis": "Apple leaf: black rot",
+          "healthy": false,
+          "cause": "Rot pathogen. Tissue breakdown, often starting at wounds or in wet conditions.",
+          "urgency": "routine",
+          "actions": [
+            "Remove and destroy affected tissue and fallen fruit.",
+            "Improve drainage and airflow; avoid injuring plants.",
+            "Protectant fungicide where an approved product exists."
+          ]
+        },
+        {
+          "label": "Apple_leaf_cedar_apple_rust",
+          "crop": "Apple",
+          "crop_display": "Apple",
+          "crop_kind": "fruit",
+          "organ": "leaf",
+          "condition": "cedar apple rust",
+          "diagnosis": "Apple leaf: cedar apple rust",
+          "healthy": false,
+          "cause": "Rust fungus. Orange to brown pustules that release spores when rubbed.",
+          "urgency": "routine",
+          "actions": [
+            "Remove badly infected leaves; clear debris at end of season.",
+            "Fungicide if it reaches the upper canopy early.",
+            "Resistant varieties and wider spacing reduce recurrence."
+          ]
+        },
+        {
+          "label": "Apple_leaf_healthy",
+          "crop": "Apple",
+          "crop_display": "Apple",
+          "crop_kind": "fruit",
+          "organ": "leaf",
+          "condition": null,
+          "diagnosis": "Healthy Apple leaf",
+          "healthy": true,
+          "cause": "No disease signs detected.",
+          "urgency": "none",
+          "actions": [
+            "Keep scouting on your normal schedule.",
+            "Avoid overhead watering late in the day."
+          ]
+        },
+        {
+          "label": "Cucumber_fruit_belly_rot",
+          "crop": "Cucumber",
+          "crop_display": "Cucumber",
+          "crop_kind": "vegetable",
+          "organ": "fruit",
+          "condition": "belly rot",
+          "diagnosis": "Cucumber fruit: belly rot",
+          "healthy": false,
+          "cause": "Rot pathogen. Tissue breakdown, often starting at wounds or in wet conditions.",
+          "urgency": "routine",
+          "actions": [
+            "Remove and destroy affected tissue and fallen fruit.",
+            "Improve drainage and airflow; avoid injuring plants.",
+            "Protectant fungicide where an approved product exists."
+          ]
+        },
+        {
+          "label": "Cucumber_fruit_healthy",
+          "crop": "Cucumber",
+          "crop_display": "Cucumber",
+          "crop_kind": "vegetable",
+          "organ": "fruit",
+          "condition": null,
+          "diagnosis": "Healthy Cucumber fruit",
+          "healthy": true,
+          "cause": "No disease signs detected.",
+          "urgency": "none",
+          "actions": [
+            "Keep scouting on your normal schedule.",
+            "Avoid overhead watering late in the day."
+          ]
+        },
+        {
+          "label": "Cucumber_fruit_pythium_fruit_rot",
+          "crop": "Cucumber",
+          "crop_display": "Cucumber",
+          "crop_kind": "vegetable",
+          "organ": "fruit",
+          "condition": "pythium fruit rot",
+          "diagnosis": "Cucumber fruit: pythium fruit rot",
+          "healthy": false,
+          "cause": "Rot pathogen. Tissue breakdown, often starting at wounds or in wet conditions.",
+          "urgency": "routine",
+          "actions": [
+            "Remove and destroy affected tissue and fallen fruit.",
+            "Improve drainage and airflow; avoid injuring plants.",
+            "Protectant fungicide where an approved product exists."
+          ]
+        },
+        {
+          "label": "Cucumber_leaf_anthracnose",
+          "crop": "Cucumber",
+          "crop_display": "Cucumber",
+          "crop_kind": "vegetable",
+          "organ": "leaf",
+          "condition": "anthracnose",
+          "diagnosis": "Cucumber leaf: anthracnose",
+          "healthy": false,
+          "cause": "Anthracnose fungus. Sunken dark lesions on leaves, stems and fruit; splash-spread.",
+          "urgency": "routine",
+          "actions": [
+            "Remove infected tissue and fallen debris.",
+            "Protectant fungicide through wet weather.",
+            "Improve drainage and airflow; avoid overhead watering."
+          ]
+        },
+        {
+          "label": "Cucumber_leaf_bacterial_wilt",
+          "crop": "Cucumber",
+          "crop_display": "Cucumber",
+          "crop_kind": "vegetable",
+          "organ": "leaf",
+          "condition": "bacterial wilt",
+          "diagnosis": "Cucumber leaf: bacterial wilt",
+          "healthy": false,
+          "cause": "Bacterial wilt, usually vectored by cucumber beetles. Plants wilt with no recovery overnight.",
+          "urgency": "urgent",
+          "actions": [
+            "Remove wilting plants immediately -- they infect the beetles that move on.",
+            "Control cucumber beetles; that is the only real lever.",
+            "Resistant varieties and floating row covers on young plants."
+          ]
+        },
+        {
+          "label": "Cucumber_leaf_downy_mildew",
+          "crop": "Cucumber",
+          "crop_display": "Cucumber",
+          "crop_kind": "vegetable",
+          "organ": "leaf",
+          "condition": "downy mildew",
+          "diagnosis": "Cucumber leaf: downy mildew",
+          "healthy": false,
+          "cause": "Oomycete downy mildew. Needs leaf wetness; spreads fast in cool humid weather.",
+          "urgency": "urgent",
+          "actions": [
+            "Stop overhead watering and improve airflow immediately.",
+            "Apply an oomycete-active fungicide -- powdery mildew products do not work on downy mildew.",
+            "Remove and destroy infected foliage; rotate next season."
+          ]
+        },
+        {
+          "label": "Cucumber_leaf_gummy_stem_blight",
+          "crop": "Cucumber",
+          "crop_display": "Cucumber",
+          "crop_kind": "vegetable",
+          "organ": "leaf",
+          "condition": "gummy stem blight",
+          "diagnosis": "Cucumber leaf: gummy stem blight",
+          "healthy": false,
+          "cause": "Gummy stem blight (Didymella/​Stagonosporopsis). It survives on seed and crop debris and spreads in wet canopies.",
+          "urgency": "routine",
+          "actions": [
+            "Remove infected vines and cucurbit debris; do not save seed from affected plants.",
+            "Use drip irrigation and open the canopy so foliage dries quickly.",
+            "Confirm locally before treatment and rotate fungicide modes of action if spraying is justified."
+          ]
+        },
+        {
+          "label": "Cucumber_leaf_healthy",
+          "crop": "Cucumber",
+          "crop_display": "Cucumber",
+          "crop_kind": "vegetable",
+          "organ": "leaf",
+          "condition": null,
+          "diagnosis": "Healthy Cucumber leaf",
+          "healthy": true,
+          "cause": "No disease signs detected.",
+          "urgency": "none",
+          "actions": [
+            "Keep scouting on your normal schedule.",
+            "Avoid overhead watering late in the day."
+          ]
+        },
+        {
+          "label": "Lemon_fruit_black_spot",
+          "crop": "Lemon",
+          "crop_display": "Lemon / citrus",
+          "crop_kind": "fruit",
+          "organ": "fruit",
+          "condition": "black spot",
+          "diagnosis": "Lemon fruit: black spot",
+          "healthy": false,
+          "cause": "Dark spotting can have fungal, bacterial, or abiotic causes; crop and lesion details are needed to separate them.",
+          "urgency": "routine",
+          "actions": [
+            "Photograph both leaf surfaces and any fruit symptoms for confirmation.",
+            "Remove fallen infected material and reduce leaf wetness.",
+            "Confirm the diagnosis with a crop specialist before applying a pesticide."
+          ]
+        },
+        {
+          "label": "Lemon_fruit_citrus_canker",
+          "crop": "Lemon",
+          "crop_display": "Lemon / citrus",
+          "crop_kind": "fruit",
+          "organ": "fruit",
+          "condition": "citrus canker",
+          "diagnosis": "Lemon fruit: citrus canker",
+          "healthy": false,
+          "cause": "Bacterial canker. Raised corky lesions; regulated in many citrus regions.",
+          "urgency": "urgent",
+          "actions": [
+            "Check local rules -- citrus canker is notifiable in many regions.",
+            "Remove and destroy infected material; disinfect tools between trees.",
+            "Copper protectant and windbreaks to limit wind-driven spread."
+          ]
+        },
+        {
+          "label": "Lemon_fruit_citrus_scab",
+          "crop": "Lemon",
+          "crop_display": "Lemon / citrus",
+          "crop_kind": "fruit",
+          "organ": "fruit",
+          "condition": "citrus scab",
+          "diagnosis": "Lemon fruit: citrus scab",
+          "healthy": false,
+          "cause": "Scab fungus. Corky or olive-brown lesions on leaves and fruit.",
+          "urgency": "routine",
+          "actions": [
+            "Clear fallen leaves to break the overwintering cycle.",
+            "Protectant fungicide during the early-season infection window.",
+            "Resistant cultivars when replanting."
+          ]
+        },
+        {
+          "label": "Lemon_fruit_greening_HLB",
+          "crop": "Lemon",
+          "crop_display": "Lemon / citrus",
+          "crop_kind": "fruit",
+          "organ": "fruit",
+          "condition": "greening HLB",
+          "diagnosis": "Lemon fruit: greening HLB",
+          "healthy": false,
+          "cause": "Citrus greening (Huanglongbing), spread by psyllids. Incurable and fatal.",
+          "urgency": "urgent",
+          "actions": [
+            "There is no cure; infected trees are a source of spread.",
+            "Report it -- notifiable in many regions.",
+            "Remove infected trees, control psyllids, plant certified stock."
+          ]
+        },
+        {
+          "label": "Lemon_fruit_healthy",
+          "crop": "Lemon",
+          "crop_display": "Lemon / citrus",
+          "crop_kind": "fruit",
+          "organ": "fruit",
+          "condition": null,
+          "diagnosis": "Healthy Lemon fruit",
+          "healthy": true,
+          "cause": "No disease signs detected.",
+          "urgency": "none",
+          "actions": [
+            "Keep scouting on your normal schedule.",
+            "Avoid overhead watering late in the day."
+          ]
+        },
+        {
+          "label": "Lemon_leaf_anthracnose",
+          "crop": "Lemon",
+          "crop_display": "Lemon / citrus",
+          "crop_kind": "fruit",
+          "organ": "leaf",
+          "condition": "anthracnose",
+          "diagnosis": "Lemon leaf: anthracnose",
+          "healthy": false,
+          "cause": "Anthracnose fungus. Sunken dark lesions on leaves, stems and fruit; splash-spread.",
+          "urgency": "routine",
+          "actions": [
+            "Remove infected tissue and fallen debris.",
+            "Protectant fungicide through wet weather.",
+            "Improve drainage and airflow; avoid overhead watering."
+          ]
+        },
+        {
+          "label": "Lemon_leaf_bacterial_blight",
+          "crop": "Lemon",
+          "crop_display": "Lemon / citrus",
+          "crop_kind": "fruit",
+          "organ": "leaf",
+          "condition": "bacterial blight",
+          "diagnosis": "Lemon leaf: bacterial blight",
+          "healthy": false,
+          "cause": "Bacterial blight. Splashing water and contaminated tools commonly move it between plants.",
+          "urgency": "routine",
+          "actions": [
+            "Avoid working wet plants and sanitize tools between blocks.",
+            "Remove severely affected tissue and use clean planting material.",
+            "Use copper only as a locally approved preventive; it will not cure existing lesions."
+          ]
+        },
+        {
+          "label": "Lemon_leaf_black_spot",
+          "crop": "Lemon",
+          "crop_display": "Lemon / citrus",
+          "crop_kind": "fruit",
+          "organ": "leaf",
+          "condition": "black spot",
+          "diagnosis": "Lemon leaf: black spot",
+          "healthy": false,
+          "cause": "Dark spotting can have fungal, bacterial, or abiotic causes; crop and lesion details are needed to separate them.",
+          "urgency": "routine",
+          "actions": [
+            "Photograph both leaf surfaces and any fruit symptoms for confirmation.",
+            "Remove fallen infected material and reduce leaf wetness.",
+            "Confirm the diagnosis with a crop specialist before applying a pesticide."
+          ]
+        },
+        {
+          "label": "Lemon_leaf_citrus_canker",
+          "crop": "Lemon",
+          "crop_display": "Lemon / citrus",
+          "crop_kind": "fruit",
+          "organ": "leaf",
+          "condition": "citrus canker",
+          "diagnosis": "Lemon leaf: citrus canker",
+          "healthy": false,
+          "cause": "Bacterial canker. Raised corky lesions; regulated in many citrus regions.",
+          "urgency": "urgent",
+          "actions": [
+            "Check local rules -- citrus canker is notifiable in many regions.",
+            "Remove and destroy infected material; disinfect tools between trees.",
+            "Copper protectant and windbreaks to limit wind-driven spread."
+          ]
+        },
+        {
+          "label": "Lemon_leaf_dry_or_senescent_leaf",
+          "crop": "Lemon",
+          "crop_display": "Lemon / citrus",
+          "crop_kind": "fruit",
+          "organ": "leaf",
+          "condition": "dry or senescent leaf",
+          "diagnosis": "Lemon leaf: dry or senescent leaf",
+          "healthy": false,
+          "cause": "Possible dry-looking or aging-leaf pattern. This photo match does not establish whether the tissue is senescent or damaged, or why its appearance changed.",
+          "urgency": "routine",
+          "actions": [
+            "Photograph the leaf and the whole plant, including unaffected leaves, without cutting tissue.",
+            "Record when the change appeared and check the watering record and visible condition of the planting area.",
+            "Arrange an agricultural extension review if the change is spreading or remains unexplained; confirm the cause before treatment."
+          ]
+        },
+        {
+          "label": "Lemon_leaf_greening_HLB",
+          "crop": "Lemon",
+          "crop_display": "Lemon / citrus",
+          "crop_kind": "fruit",
+          "organ": "leaf",
+          "condition": "greening HLB",
+          "diagnosis": "Lemon leaf: greening HLB",
+          "healthy": false,
+          "cause": "Citrus greening (Huanglongbing), spread by psyllids. Incurable and fatal.",
+          "urgency": "urgent",
+          "actions": [
+            "There is no cure; infected trees are a source of spread.",
+            "Report it -- notifiable in many regions.",
+            "Remove infected trees, control psyllids, plant certified stock."
+          ]
+        },
+        {
+          "label": "Lemon_leaf_healthy",
+          "crop": "Lemon",
+          "crop_display": "Lemon / citrus",
+          "crop_kind": "fruit",
+          "organ": "leaf",
+          "condition": null,
+          "diagnosis": "Healthy Lemon leaf",
+          "healthy": true,
+          "cause": "No disease signs detected.",
+          "urgency": "none",
+          "actions": [
+            "Keep scouting on your normal schedule.",
+            "Avoid overhead watering late in the day."
+          ]
+        },
+        {
+          "label": "Lemon_leaf_leaf_curl_unknown_cause",
+          "crop": "Lemon",
+          "crop_display": "Lemon / citrus",
+          "crop_kind": "fruit",
+          "organ": "leaf",
+          "condition": "leaf curl unknown cause",
+          "diagnosis": "Lemon leaf: leaf curl unknown cause",
+          "healthy": false,
+          "cause": "Leaf curling is visible, but an image alone cannot separate mites, sap-feeding insects, virus, herbicide drift, or water/root stress.",
+          "urgency": "routine",
+          "actions": [
+            "Inspect both leaf surfaces with a hand lens for mites, insects, webbing, or mines.",
+            "Compare the pattern across the block and check irrigation, roots, and recent spray drift.",
+            "Isolate strongly affected nursery plants and confirm the cause before choosing any pesticide."
+          ]
+        },
+        {
+          "label": "Lemon_leaf_leafminer",
+          "crop": "Lemon",
+          "crop_display": "Lemon / citrus",
+          "crop_kind": "fruit",
+          "organ": "leaf",
+          "condition": "leafminer",
+          "diagnosis": "Lemon leaf: leafminer",
+          "healthy": false,
+          "cause": "Leafminer larvae feeding between the upper and lower leaf surfaces.",
+          "urgency": "routine",
+          "actions": [
+            "Remove a small number of mined leaves and conserve parasitoid wasps.",
+            "Use yellow sticky cards to track adult pressure rather than spraying by calendar.",
+            "Treat only when scouting thresholds justify it; broad-spectrum insecticides can kill beneficials."
+          ]
+        },
+        {
+          "label": "Lemon_leaf_melanose",
+          "crop": "Lemon",
+          "crop_display": "Lemon / citrus",
+          "crop_kind": "fruit",
+          "organ": "leaf",
+          "condition": "melanose",
+          "diagnosis": "Lemon leaf: melanose",
+          "healthy": false,
+          "cause": "Citrus melanose fungus. Inoculum comes mainly from dead twigs during wet weather.",
+          "urgency": "routine",
+          "actions": [
+            "Prune dead twigs and open the canopy before the rainy infection period.",
+            "Improve airflow and avoid prolonged overhead irrigation.",
+            "Use a locally approved protectant only when crop stage and wet-weather risk justify it."
+          ]
+        },
+        {
+          "label": "Lemon_leaf_mite_damage",
+          "crop": "Lemon",
+          "crop_display": "Lemon / citrus",
+          "crop_kind": "fruit",
+          "organ": "leaf",
+          "condition": "mite damage",
+          "diagnosis": "Lemon leaf: mite damage",
+          "healthy": false,
+          "cause": "Likely mite feeding damage. Mites build fastest in hot, dusty conditions and broad-spectrum insecticides can worsen outbreaks by killing predators.",
+          "urgency": "routine",
+          "actions": [
+            "Confirm mites or eggs on leaf undersides with a hand lens before treating.",
+            "Reduce dust and water stress, wash small plants, and conserve predatory mites.",
+            "If thresholds justify treatment, use a locally approved selective miticide or horticultural oil and cover leaf undersides."
+          ]
+        },
+        {
+          "label": "Lemon_leaf_nutrient_deficiency",
+          "crop": "Lemon",
+          "crop_display": "Lemon / citrus",
+          "crop_kind": "fruit",
+          "organ": "leaf",
+          "condition": "nutrient deficiency",
+          "diagnosis": "Lemon leaf: nutrient deficiency",
+          "healthy": false,
+          "cause": "Possible discoloration pattern resembling examples labelled nutrient deficiency. A photo cannot confirm a nutrient shortage, identify a missing nutrient, or rule out another cause.",
+          "urgency": "routine",
+          "actions": [
+            "Photograph affected and unaffected leaves from the same plant and note their positions.",
+            "Record recent watering and fertilizer changes without changing the application rate based on this result.",
+            "Ask a local agricultural extension specialist to review the pattern and advise whether testing is needed before adding fertilizer or choosing a treatment."
+          ]
+        },
+        {
+          "label": "Lemon_leaf_spider_mite",
+          "crop": "Lemon",
+          "crop_display": "Lemon / citrus",
+          "crop_kind": "fruit",
+          "organ": "leaf",
+          "condition": "spider mite",
+          "diagnosis": "Lemon leaf: spider mite",
+          "healthy": false,
+          "cause": "Spider-mite feeding causes fine stippling, bronzing, and sometimes webbing on leaf undersides.",
+          "urgency": "routine",
+          "actions": [
+            "Confirm moving mites and eggs with a hand lens and map the infested area.",
+            "Reduce dust and water stress; conserve or release predatory mites where practical.",
+            "Use soap, horticultural oil, or a selective locally approved miticide only when scouting pressure justifies it."
+          ]
+        },
+        {
+          "label": "Tomato_fruit_healthy",
+          "crop": "Tomato",
+          "crop_display": "Tomato",
+          "crop_kind": "vegetable",
+          "organ": "fruit",
+          "condition": null,
+          "diagnosis": "Healthy Tomato fruit",
+          "healthy": true,
+          "cause": "No disease signs detected.",
+          "urgency": "none",
+          "actions": [
+            "Keep scouting on your normal schedule.",
+            "Avoid overhead watering late in the day."
+          ]
+        },
+        {
+          "label": "Tomato_leaf_bacterial_spot",
+          "crop": "Tomato",
+          "crop_display": "Tomato",
+          "crop_kind": "vegetable",
+          "organ": "leaf",
+          "condition": "bacterial spot",
+          "diagnosis": "Tomato leaf: bacterial spot",
+          "healthy": false,
+          "cause": "Bacterial spot. Seed- and splash-borne; copper is protectant only, never curative.",
+          "urgency": "routine",
+          "actions": [
+            "Start from certified seed and clean transplants.",
+            "Copper-based protectant on a regular interval.",
+            "Never work the rows while foliage is wet; rotate 2-3 years."
+          ]
+        },
+        {
+          "label": "Tomato_leaf_black_spot",
+          "crop": "Tomato",
+          "crop_display": "Tomato",
+          "crop_kind": "vegetable",
+          "organ": "leaf",
+          "condition": "black spot",
+          "diagnosis": "Tomato leaf: black spot",
+          "healthy": false,
+          "cause": "Dark spotting can have fungal, bacterial, or abiotic causes; crop and lesion details are needed to separate them.",
+          "urgency": "routine",
+          "actions": [
+            "Photograph both leaf surfaces and any fruit symptoms for confirmation.",
+            "Remove fallen infected material and reduce leaf wetness.",
+            "Confirm the diagnosis with a crop specialist before applying a pesticide."
+          ]
+        },
+        {
+          "label": "Tomato_leaf_early_blight",
+          "crop": "Tomato",
+          "crop_display": "Tomato",
+          "crop_kind": "vegetable",
+          "organ": "leaf",
+          "condition": "early blight",
+          "diagnosis": "Tomato leaf: early blight",
+          "healthy": false,
+          "cause": "Foliar blight. Lesions expand and merge, killing leaf tissue.",
+          "urgency": "routine",
+          "actions": [
+            "Remove affected leaves and crop debris.",
+            "Protectant fungicide on a regular interval.",
+            "Rotate and avoid overhead irrigation."
+          ]
+        },
+        {
+          "label": "Tomato_leaf_healthy",
+          "crop": "Tomato",
+          "crop_display": "Tomato",
+          "crop_kind": "vegetable",
+          "organ": "leaf",
+          "condition": null,
+          "diagnosis": "Healthy Tomato leaf",
+          "healthy": true,
+          "cause": "No disease signs detected.",
+          "urgency": "none",
+          "actions": [
+            "Keep scouting on your normal schedule.",
+            "Avoid overhead watering late in the day."
+          ]
+        },
+        {
+          "label": "Tomato_leaf_late_blight",
+          "crop": "Tomato",
+          "crop_display": "Tomato",
+          "crop_kind": "vegetable",
+          "organ": "leaf",
+          "condition": "late blight",
+          "diagnosis": "Tomato leaf: late blight",
+          "healthy": false,
+          "cause": "Phytophthora late blight. Destroys plantings within days in cool wet weather.",
+          "urgency": "urgent",
+          "actions": [
+            "Act now; remove and destroy infected plants, do not compost.",
+            "Protectant fungicide on everything still clean.",
+            "Never irrigate overhead while blight is active."
+          ]
+        },
+        {
+          "label": "Tomato_leaf_leaf_mold",
+          "crop": "Tomato",
+          "crop_display": "Tomato",
+          "crop_kind": "vegetable",
+          "organ": "leaf",
+          "condition": "leaf mold",
+          "diagnosis": "Tomato leaf: leaf mold",
+          "healthy": false,
+          "cause": "Mould pathogen, driven by humidity.",
+          "urgency": "routine",
+          "actions": [
+            "Ventilate and reduce humidity; space plants.",
+            "Remove affected leaves.",
+            "Fungicide where an approved product exists."
+          ]
+        },
+        {
+          "label": "Tomato_leaf_septoria_leaf_spot",
+          "crop": "Tomato",
+          "crop_display": "Tomato",
+          "crop_kind": "vegetable",
+          "organ": "leaf",
+          "condition": "septoria leaf spot",
+          "diagnosis": "Tomato leaf: septoria leaf spot",
+          "healthy": false,
+          "cause": "Leaf-spot pathogen. Discrete lesions that merge and defoliate under pressure.",
+          "urgency": "routine",
+          "actions": [
+            "Strip affected lower leaves and mulch to stop soil splash.",
+            "Protectant fungicide on a regular interval.",
+            "Rotate away from the same crop family."
+          ]
+        },
+        {
+          "label": "Tomato_leaf_target_spot",
+          "crop": "Tomato",
+          "crop_display": "Tomato",
+          "crop_kind": "vegetable",
+          "organ": "leaf",
+          "condition": "target spot",
+          "diagnosis": "Tomato leaf: target spot",
+          "healthy": false,
+          "cause": "Disease detected, but no specific entry for this class yet.",
+          "urgency": "routine",
+          "actions": [
+            "Remove and destroy affected leaves and fallen debris.",
+            "Improve airflow and avoid overhead irrigation.",
+            "Take a clear photo to your local agricultural extension service for confirmation."
+          ]
+        },
+        {
+          "label": "Tomato_leaf_tomato_mosaic_virus",
+          "crop": "Tomato",
+          "crop_display": "Tomato",
+          "crop_kind": "vegetable",
+          "organ": "leaf",
+          "condition": "tomato mosaic virus",
+          "diagnosis": "Tomato leaf: tomato mosaic virus",
+          "healthy": false,
+          "cause": "Plant virus. No cure; spread mechanically and by insect vectors.",
+          "urgency": "urgent",
+          "actions": [
+            "Remove and destroy infected plants -- they are a reservoir.",
+            "Disinfect hands and tools between plants.",
+            "Use resistant varieties and control insect vectors."
+          ]
+        },
+        {
+          "label": "Tomato_leaf_two_spotted_spider_mite",
+          "crop": "Tomato",
+          "crop_display": "Tomato",
+          "crop_kind": "vegetable",
+          "organ": "leaf",
+          "condition": "two spotted spider mite",
+          "diagnosis": "Tomato leaf: two spotted spider mite",
+          "healthy": false,
+          "cause": "Spider-mite feeding causes fine stippling, bronzing, and sometimes webbing on leaf undersides.",
+          "urgency": "routine",
+          "actions": [
+            "Confirm moving mites and eggs with a hand lens and map the infested area.",
+            "Reduce dust and water stress; conserve or release predatory mites where practical.",
+            "Use soap, horticultural oil, or a selective locally approved miticide only when scouting pressure justifies it."
+          ]
+        },
+        {
+          "label": "Tomato_leaf_yellow_leaf_curl_virus",
+          "crop": "Tomato",
+          "crop_display": "Tomato",
+          "crop_kind": "vegetable",
+          "organ": "leaf",
+          "condition": "yellow leaf curl virus",
+          "diagnosis": "Tomato leaf: yellow leaf curl virus",
+          "healthy": false,
+          "cause": "Plant virus. No cure once a plant is infected.",
+          "urgency": "urgent",
+          "actions": [
+            "Rogue out infected plants promptly.",
+            "Control the insect vector -- that is what stops spread.",
+            "Plant certified stock and resistant varieties next season."
+          ]
+        }
+      ],
+      "checkpoint_sha256": "3a638bedc0bb40aa82bf8471978cf848adb1782f60b3bd1bfb26c5f8d24aa50f",
+      "onnx_sha256": "d2300795dea6b44c082a6a3a62c9cdc3b7a5048a30e81db26603950b805ff1b9"
     }
   ],
   "leaf_detector": {

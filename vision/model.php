@@ -43,6 +43,11 @@ $models = [
         'download_name' => 'cropscout-lemon-leaf.onnx',
         'content_type' => 'application/octet-stream',
     ],
+    'tomato-leaf' => [
+        'path' => __DIR__ . '/private/cropscout-tomato-leaf.onnx',
+        'download_name' => 'cropscout-tomato-leaf.onnx',
+        'content_type' => 'application/octet-stream',
+    ],
     // Optional leaf finder, used only when the page is opened with ?detector=1.
     'leaf-detector' => [
         'path' => __DIR__ . '/private/cropscout-leaf-detector.onnx',
@@ -59,16 +64,17 @@ if (!array_key_exists($requested, $models)) {
 }
 
 $model = $models[$requested];
-// Merely uploading a candidate lemon model must not activate or publish it.
-// Root release metadata enables this optional route only after model validation.
-if ($requested === 'lemon-leaf') {
+// Merely uploading a candidate lemon or tomato-leaf model must not activate or publish it.
+// Root release metadata enables these optional routes only after model validation.
+$gatedFamilies = ['lemon-leaf' => ['Lemon_leaf'], 'tomato-leaf' => ['Tomato_leaf']];
+if (array_key_exists($requested, $gatedFamilies)) {
     $raw = @file_get_contents(__DIR__ . '/private/model-metadata.json');
     $metadata = is_string($raw) ? json_decode($raw, true) : null;
     $enabled = false;
     if (is_array($metadata) && isset($metadata['condition_specialists']) && is_array($metadata['condition_specialists'])) {
         foreach ($metadata['condition_specialists'] as $specialist) {
-            if (is_array($specialist) && ($specialist['id'] ?? '') === 'lemon-leaf'
-                && ($specialist['families'] ?? []) === ['Lemon_leaf']) {
+            if (is_array($specialist) && ($specialist['id'] ?? '') === $requested
+                && ($specialist['families'] ?? []) === $gatedFamilies[$requested]) {
                 $enabled = true;
                 break;
             }

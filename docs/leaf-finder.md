@@ -109,9 +109,11 @@ The leaf number is low mainly because SLIF has about 24 small, partly boxed leaf
 
 "Correct" is a lower bound: on SLIF and Sichuan photos many real leaves have no box, so a box on one of them counts as wrong. Looking at SLIF test photos, the misses are mostly sub-leaf boxes (a lesion patch on a big leaf) and the odd pot rim. A box that is not a tomato leaf still has to pass the crop/type gate before anything is shown.
 
-### Live, fake camera (`tests/live-e2e.mjs --query detector=1`)
+### Live, fake camera (`tests/live-e2e.mjs`)
 
-**Close-ups still match photo mode: 22 of 22**, with no flicker and about the same time to a verdict (1.0–1.4 s). On 21 of the 22 the finder sees one leaf filling the square (or nothing) and the square is analysed as before. The one exception is a cluster of four tomatoes on white: it was split into three fruits, one was confirmed healthy-like (100 % on its own crop, 85 % for the whole photo), and the label matches photo mode.
+**Finder off, after the field leaf classifier work: 22 of 22 close-ups match photo mode**, no flicker, first verdict in 1.0–1.4 s, 65–68 frames in 25 s, 46–111 ms per frame. The six whole-plant scenes in the same run: three right disease names (dense greenhouse plant, potted plant, stem) and three abstentions, no wrong name.
+
+**Finder on:** before the classifier work, the close-ups also matched photo mode on 22 of 22, with about the same time to a verdict (1.0–1.4 s); on 21 of the 22 the finder sees one leaf filling the square (or nothing) and the square is analysed as before. The one exception is a cluster of four tomatoes on white: it was split into three fruits, one was confirmed healthy-like, and the label matches photo mode. With the new models this mode has so far been checked offline only (`tools/classifier/evaluate.py`: photo mode = live square on all close-ups, the scene results below); the browser run is `cd tests && node live-e2e.mjs --query detector=1`.
 
 | Apple M2, headless Chrome, WebAssembly 1 thread | Finder off | Finder on, one leaf fills the square | Finder on, 3 leaves |
 |---|---|---|---|
@@ -124,23 +126,24 @@ The cycle barely changes on the M2 because the loop already rests at least 350 m
 
 ### Whole-plant scenes
 
-Six held-out photos (test split, never trained on) shown as the fake camera. Ground truth comes from each source's own label.
+Six held-out photos (test split, never trained on) shown as the fake camera. Ground truth comes from each source's own label. **Before** is the condition model and crop/type model the page shipped with; **now** is after the [field leaf classifier](field-classifier.md) work: a tomato-leaf condition specialist and a crop/type model that both learned from field leaf crops cut out by this finder.
 
-| Scene | Truth | Finder off | Finder on |
-|---|---|---|---|
-| Greenhouse plant (Sichuan) | viral mottling | abstain (read as cucumber leaf) | 1 leaf · abstain (possible tomato leaf) |
-| Greenhouse, dense (Sichuan) | viral mottling | abstain (read as citrus fruit) | 3 leaves · **late blight 72 %** ✗ |
-| Greenhouse fruit (Sichuan) | gray mold (not a covered class) | abstain | 1 fruit · abstain |
-| Field, potted plant (SLIF) | early blight | abstain (cucumber leaf) | not split · abstain |
-| Field, stem (SLIF) | early blight | **cucumber bacterial wilt 76 %** ✗ | 1 leaf · **leaf mold 100 %** ✗ |
-| Canopy (PlantDoc) | leaf mold | **citrus greening 98 %** ✗ | not split · **citrus greening 98 %** ✗ |
+| Scene | Truth | Before, finder off | Before, finder on | Now, finder off | Now, finder on |
+|---|---|---|---|---|---|
+| Greenhouse plant (Sichuan) | viral mottling | abstain (read as cucumber leaf) | 1 leaf · abstain | abstain (cucumber leaf) | 1 leaf · **mosaic virus 99 %** ✓ |
+| Greenhouse, dense (Sichuan) | viral mottling | abstain (read as citrus fruit) | 3 leaves · **late blight 72 %** ✗ | **mosaic virus 99 %** ✓ | 3 leaves · **mosaic virus 99–100 %** ✓ |
+| Greenhouse fruit (Sichuan) | gray mold (not a covered class) | abstain | 1 fruit · abstain | abstain | 1 leaf · abstain |
+| Field, potted plant (SLIF) | early blight | abstain (cucumber leaf) | not split · abstain | **early blight 100 %** ✓ | not split · **early blight 100 %** ✓ |
+| Field, stem (SLIF) | early blight | **cucumber bacterial wilt 76 %** ✗ | 1 leaf · **leaf mold 100 %** ✗ | **early blight 100 %** ✓ | 1 leaf · **early blight 71 %** ✓ |
+| Canopy (PlantDoc) | leaf mold | **citrus greening 98 %** ✗ | not split · **citrus greening 98 %** ✗ | abstain (tomato leaf, 46 %) | not split · abstain |
 
-What this shows:
-- **The finder does its job where it fires.** The crops are clean single leaflets, and the crop gate now says *tomato leaf* (or *possible tomato leaf*) on three scenes that were read as cucumber or citrus.
-- **The condition model is the weak link on field leaves.** Once a field leaflet passes the crop gate, the general condition model, which learned mostly from leaves on plain backgrounds, can be confidently wrong: 3 confident wrong verdicts with the finder on, against 2 with it off, on these six scenes. It is also fragile: two crops of the first scene a few pixels apart gave an abstention and *healthy-like 83 %*.
-- **Recall on big, obvious leaves is limited.** The canopy and the potted plant were not split.
+Confident wrong disease names: before 2 (off) and 3 (on); now **0 and 0**. Right names: before 0; now 3 (off) and 4 (on). What this shows:
 
-So the finder stays **off by default**. It is ready as a localiser; turning it on for users needs a condition model trained on field leaf crops (CCMT, the Daffodil set, Netrokona and Taiwan in [datasets.md](datasets.md)), ideally cut out by this finder, and the six scenes above as a gate.
+- **The finder does its job where it fires.** Its crops are clean single leaflets, and with a condition model that has seen field leaves they get the right name: the first scene, which abstained on the whole square, is named only through its leaf crop.
+- **Two of the three old failures were the crop gate, not the condition model.** The stem scene (read as cucumber) and the canopy (read as citrus fruit) were fixed by giving the crop/type model field tomato leaves.
+- **Recall on big, obvious leaves is still limited.** The canopy and the potted plant are not split, so the whole square decides; the potted plant is now right that way, the canopy abstains.
+
+The finder is still **off by default** (`?detector=1`). With these results it is ready to be turned on for tomato; the remaining reasons to wait are speed on slow phones (about 50 ms more per frame) and the fruit classes, which are not covered either way.
 
 ## Rebuild
 
