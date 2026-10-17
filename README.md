@@ -11,6 +11,13 @@ scripts/link-models.sh /path/to/onnx/models   # puts the model files into vision
 scripts/serve.sh                               # http://localhost:8080/vision/
 ```
 
+On Windows (needs PHP 8 on PATH, e.g. `winget install PHP.PHP.8.4`, with `pdo_sqlite`, `sqlite3`, `gd`, `mbstring` and `zip` enabled in `php.ini`):
+
+```bat
+scripts\install-models.cmd C:\path\to\onnx\models   REM copies the models and checks their SHA-256 against the metadata
+scripts\serve.cmd                                   REM http://localhost:8080/vision/
+```
+
 1. Open `http://localhost:8080/vision/` in Chrome or Safari.
 2. Press **Live camera** and hold a tomato leaf inside the square.
 3. A confirmed label appears in about 1–2 seconds.

@@ -9,14 +9,16 @@ $scriptHash = @hash_file('sha256', __DIR__ . '/app.js');
 $styleVersion = is_string($styleHash) ? substr($styleHash, 0, 12) : '25';
 $scriptVersion = is_string($scriptHash) ? substr($scriptHash, 0, 12) : '25';
 header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
+$detectorOn = isset($_GET['detector']) && $_GET['detector'] === '1';
 ?><!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Experimental crop and visible-symptom screening for apple, tomato, cucumber and lemon. Analyze photos or a live camera locally in your browser, without an account.">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="description" content="CropSCOUT Vision: the camera AI subsystem of the CropSCOUT field robot. Live tomato leaf disease screening runs in the browser, on the device, with no upload.">
     <meta name="referrer" content="same-origin">
-    <title>CropSCOUT Vision — crop screening</title>
+    <meta name="theme-color" content="#0b0e0c">
+    <title>CropSCOUT Vision — camera AI subsystem</title>
     <link rel="canonical" href="https://crop-scout.com/vision/">
     <link rel="stylesheet" href="styles.css?v=<?= rawurlencode($styleVersion) ?>">
     <script src="app.js?v=<?= rawurlencode($scriptVersion) ?>" type="module"></script>
@@ -24,55 +26,77 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
 <body class="vision-page">
 <header class="app-header">
     <a class="brand-lockup" href="/" aria-label="CropSCOUT home">
-        <span class="brand-name">CropSCOUT</span>
-        <span class="brand-mode">Live</span>
+        <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M4 7.5h3l1.4-2h7.2l1.4 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/><path d="M12 9.5v-1M12 17.5v-1M8.5 13h-1M16.5 13h-1"/></svg>
+        </span>
+        <span class="brand-text">
+            <span class="brand-name">CropSCOUT</span>
+            <span class="brand-mode">Vision · camera AI</span>
+        </span>
     </a>
 
     <div class="header-actions">
+        <dl class="sys-readout" aria-label="Subsystem telemetry">
+            <div><dt>Module</dt><dd>VIS-CAM 01</dd></div>
+            <div><dt>Runtime</dt><dd>ORT-web · WASM · 1T</dd></div>
+            <div><dt>Mode</dt><dd id="hud-mode"><?= $detectorOn ? 'LEAF FINDER' : 'SQUARE' ?></dd></div>
+            <div><dt>Frames</dt><dd id="hud-frames">0</dd></div>
+            <div><dt>Infer</dt><dd id="hud-ms">— ms</dd></div>
+        </dl>
         <div class="model-state" id="model-state" aria-live="polite">
             <span class="state-dot" aria-hidden="true"></span>
             <span id="model-state-text">model check pending</span>
         </div>
-        <a class="site-home-link" href="/">CropSCOUT home <span aria-hidden="true">↗</span></a>
+        <a class="site-home-link" href="/">Robot home <span aria-hidden="true">↗</span></a>
     </div>
 </header>
 
 <main class="page-main">
 <section class="hero" aria-labelledby="page-title">
     <div class="hero-copy">
-        <h1 id="page-title">Live screening</h1>
-        <p class="hero-lede">Point your camera at one leaf and see the disease screening live. It runs on your device: the frames are never uploaded.</p>
-        <p class="hero-scope">Checks tomato, cucumber, apple and lemon, leaf or fruit: first which crop and part it is, then the common diseases and problems of that part.</p>
+        <p class="hero-eyebrow"><span class="rec-dot" aria-hidden="true"></span>Onboard perception · live screening</p>
+        <h1 id="page-title">Camera AI subsystem</h1>
+        <p class="hero-lede">This is the vision stage of the CropSCOUT rover. The camera feed is read a few times a second, each frame goes through the crop gate, the condition model and four safeguards, and a label is shown only when several frames agree.</p>
+        <p class="hero-scope">Tomato leaf is the primary target: healthy, early blight, late blight, septoria, bacterial spot, black spot, target spot, leaf mold, mosaic virus, yellow leaf curl virus and spider mite. Cucumber, apple and lemon are covered as secondary crops.</p>
         <div class="hero-actions">
             <button class="hero-camera-button" id="hero-camera-button" type="button">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h3l1.4-2h7.2l1.4 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
-                Live camera
+                Open live feed
             </button>
             <button class="hero-photo-button" id="hero-photo-button" type="button">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="m4 16 4.5-4.5 3.5 3.5 2.5-2.5L20 18"/><circle cx="15.5" cy="9.5" r="1.4"/></svg>
-                Choose a photo
+                Analyse a still
             </button>
+            <a class="hero-flag" href="?detector=<?= $detectorOn ? '0' : '1' ?>">
+                <?= $detectorOn ? 'Leaf finder: ON' : 'Leaf finder: OFF' ?> <span aria-hidden="true">·</span> toggle
+            </a>
         </div>
         <p class="hero-note">Screening support, not a laboratory diagnosis or a spray recommendation. Confirm uncertain or severe symptoms with an agronomist before treating.</p>
     </div>
-    <aside class="good-result" aria-labelledby="good-result-title">
-        <h2 id="good-result-title">For a good result</h2>
-        <ul>
-            <li>One leaf fills most of the square.</li>
-            <li>Daylight, no flash, and the spots in sharp focus.</li>
-            <li>If the problem is underneath, show that side too.</li>
-        </ul>
+    <aside class="pipeline-card" aria-labelledby="pipeline-title">
+        <h2 id="pipeline-title">Inference pipeline</h2>
+        <ol class="pipeline">
+            <li><span>01</span><strong>Sensor feed</strong><small>centre square · 224 px · two-step downscale</small></li>
+            <li><span>02</span><strong>Crop / type gate</strong><small>YOLO26n-cls · tomato leaf, fruit, other crop, other</small></li>
+            <li><span>03</span><strong>Condition model</strong><small>tomato-leaf specialist · 46 classes · field-trained</small></li>
+            <li><span>04</span><strong>Safeguards</strong><small>confidence · margin · family mass · healthy separation</small></li>
+            <li><span>05</span><strong>Frame vote</strong><small>3 of last 4 agree to show · withdrawn under 2</small></li>
+        </ol>
+        <p class="pipeline-foot">Frames are processed in browser memory and never leave the device.</p>
     </aside>
 </section>
 
 <div class="screening-grid">
     <section class="panel capture-panel" aria-labelledby="capture-title">
-        <p class="section-number">01 / capture</p>
-        <div class="panel-intro">
-            <h2 id="capture-title">Show us the crop</h2>
-            <p>Use the live camera, or photograph one fruit or one leaf in daylight.</p>
+        <div class="panel-head">
+            <p class="section-number">01 / input feed</p>
+            <span class="panel-tag">camera · still</span>
         </div>
-        <p class="experimental-notice"><strong>Experimental screening.</strong> Confirm the crop and leaf/fruit type before acting. Fruit photographed on the plant, yellowing cucumber leaves, whole tomato seedlings and tomato-fruit rots are still misidentified or not covered. This is not a diagnosis or a pesticide recommendation.</p>
+        <div class="panel-intro">
+            <h2 id="capture-title">Feed the subsystem</h2>
+            <p>Use the live camera, or load one still of a single fruit or leaf in daylight.</p>
+        </div>
+        <p class="experimental-notice"><strong>Experimental model release.</strong> Confirm the crop and leaf/fruit type before acting. Fruit on the plant, yellowing cucumber leaves, whole tomato seedlings and tomato-fruit rots are still misidentified or not covered. This is not a diagnosis or a pesticide recommendation.</p>
 
         <input
             class="visually-hidden"
@@ -96,24 +120,26 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
 
         <div class="drop-zone" id="drop-zone">
             <div class="upload-prompt" id="upload-prompt">
-                <span class="upload-icon" aria-hidden="true">↥</span>
-                <strong>Add one clear crop photo</strong>
-                <span>Fill the frame with one fruit or leaf</span>
+                <span class="upload-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M4 7.5h3l1.4-2h7.2l1.4 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+                </span>
+                <strong>No frame loaded</strong>
+                <span>Open the live feed or drop one clear crop photo here</span>
                 <div class="capture-actions">
                     <button class="camera-button" id="open-camera-button" type="button">
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h3l1.4-2h7.2l1.4 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
-                        Live camera
+                        Live feed
                     </button>
                     <button class="native-camera-button" id="native-camera-button" type="button">
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h3l1.4-2h7.2l1.4 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
-                        Take photo
+                        Capture still
                     </button>
                     <button class="choose-button" id="upload-photo-button" type="button">
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v5h14v-5"/></svg>
-                        Upload photo
+                        Load file
                     </button>
                 </div>
-                <small id="camera-availability-note">No account needed. Photos stay on this device. Live camera on phones needs HTTPS · JPEG, PNG or WebP · up to 15 MB.</small>
+                <small id="camera-availability-note">On-device inference · frames never uploaded · live feed on phones needs HTTPS · JPEG, PNG or WebP up to 15 MB</small>
             </div>
 
             <figure class="preview-shell" id="preview-shell" tabindex="-1" hidden>
@@ -130,10 +156,10 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
                     </p>
                 </div>
                 <figcaption>
-                    <span><strong>Square analysis crop</strong><small id="file-name"></small></span>
+                    <span><strong>Analysis crop · 224 px</strong><small id="file-name"></small></span>
                     <div class="preview-actions">
-                        <button id="reopen-camera-button" type="button">Live camera</button>
-                        <button id="replace-photo-button" type="button">Replace</button>
+                        <button id="reopen-camera-button" type="button">live feed</button>
+                        <button id="replace-photo-button" type="button">replace</button>
                     </div>
                 </figcaption>
             </figure>
@@ -142,7 +168,7 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
         <details class="crop-correction" id="crop-correction">
             <summary>
                 <span>Crop or photo type wrong?</span>
-                <strong>Correct it</strong>
+                <strong>Override</strong>
             </summary>
             <fieldset class="crop-confirmation">
                 <legend class="visually-hidden">Crop confirmation</legend>
@@ -166,41 +192,44 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
                         </select>
                     </label>
                 </div>
-                <p>If either automatic result is wrong, select both the known crop and Leaf or Fruit, then analyze again.</p>
+                <p>If either automatic result is wrong, select both the known crop and Leaf or Fruit, then run the analysis again.</p>
             </fieldset>
         </details>
 
         <div class="capture-note">
             <span aria-hidden="true">◎</span>
-            <p><strong>For condition screening:</strong> use one close, clear fruit or leaf. Covered fruit conditions can be screened directly; leaf diseases still need a sharp leaf photo.</p>
+            <p><strong>For condition screening:</strong> one close, sharp fruit or leaf filling the square. Covered fruit conditions are screened directly; leaf diseases need a sharp leaf frame.</p>
         </div>
 
         <button class="analyze-button" id="analyze-button" type="button" disabled>
-            <span>Analyze photo</span>
+            <span>Run inference</span>
             <span aria-hidden="true">→</span>
         </button>
     </section>
 
     <section class="panel result-panel" aria-labelledby="result-heading">
-        <p class="section-number">02 / result</p>
+        <div class="panel-head">
+            <p class="section-number">02 / inference output</p>
+            <span class="panel-tag">on-device</span>
+        </div>
 
         <div class="result-empty" id="result-empty">
             <span class="scan-glyph" aria-hidden="true"></span>
-            <p class="eyebrow">browser-local field screening</p>
-            <h2 id="result-heading">Your result will appear here</h2>
-            <p>Choose a tomato, cucumber, apple, lemon, or leaf photo. Analysis runs in this browser; the image is not sent to the website server.</p>
+            <p class="eyebrow">awaiting frame</p>
+            <h2 id="result-heading">Output will appear here</h2>
+            <p>Load a tomato, cucumber, apple or lemon frame. Inference runs in this browser; the image is not sent to the server.</p>
         </div>
 
         <div class="result-busy" id="result-busy" hidden aria-live="polite">
             <span class="spinner" aria-hidden="true"></span>
-            <p class="eyebrow">analyzing locally</p>
-            <h2>Scanning crop image…</h2>
+            <p class="eyebrow">inference running</p>
+            <h2>Scanning frame…</h2>
             <p id="busy-stage">Loading the AI models in this browser.</p>
         </div>
 
         <div class="result-error" id="result-error" hidden role="alert">
-            <p class="eyebrow">analysis unavailable</p>
-            <h2 id="error-title">We could not analyze this photo</h2>
+            <p class="eyebrow">inference unavailable</p>
+            <h2 id="error-title">We could not analyse this frame</h2>
             <p id="error-message">Try a brighter, sharper image with one crop filling the frame.</p>
         </div>
 
@@ -235,7 +264,7 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
 
             <button class="result-correction-button" id="result-correction-button" type="button">
                 <span>Crop or photo type wrong?</span>
-                <strong>Correct it →</strong>
+                <strong>Override →</strong>
             </button>
 
             <div class="score-grid">
@@ -270,7 +299,7 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
 
             <aside class="evidence-note" id="evidence-note" hidden>
                 <span aria-hidden="true"></span>
-                <p><strong>Red AI evidence is shown on the photo.</strong> It marks image regions that changed this model result most, not exact disease or lesion boundaries.</p>
+                <p><strong>Red AI evidence is shown on the frame.</strong> It marks image regions that changed this model result most, not exact disease or lesion boundaries.</p>
             </aside>
 
             <section class="result-section" id="summary-section">
@@ -341,8 +370,8 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
 <footer class="site-footer">
     <div class="footer-inner">
         <div class="footer-brand">
-            <p class="footer-wordmark">CropSCOUT</p>
-            <p>Field robotics, built around the farmer.</p>
+            <p class="footer-wordmark">CropSCOUT <span>Vision</span></p>
+            <p>Camera AI subsystem of the CropSCOUT field robot. Field robotics, built around the farmer.</p>
         </div>
         <div class="footer-columns">
             <div>
@@ -354,8 +383,8 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
                 <p>Screening support, not a laboratory diagnosis or a spray recommendation.</p>
             </div>
             <div>
-                <h2>Connect</h2>
-                <p><a href="/">crop-scout.com</a></p>
+                <h2>Stack</h2>
+                <p>YOLO26 classifiers + leaf finder · ONNX · onnxruntime-web 1.29 · <a href="/">crop-scout.com</a></p>
             </div>
         </div>
     </div>
@@ -374,7 +403,7 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
     <div class="camera-dialog">
         <header class="camera-heading">
             <div>
-                <p>Live square capture</p>
+                <p><span class="rec-dot" aria-hidden="true"></span>VIS-CAM 01 · live feed</p>
                 <h2 id="camera-title">Frame one fruit or leaf</h2>
             </div>
             <button class="camera-close" id="close-camera-button" type="button" aria-label="Close camera">×</button>
@@ -386,14 +415,19 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
             <aside class="live-recognition is-loading" id="live-recognition">
                 <span class="live-recognition-dot" aria-hidden="true"></span>
                 <span>
-                    <small>Live local AI</small>
+                    <small>Live on-device AI</small>
                     <strong id="live-crop-result">Starting recognition…</strong>
                     <span id="live-condition-result">Keep one fruit or leaf inside the square</span>
                 </span>
             </aside>
             <span class="visually-hidden" id="live-recognition-announcement" aria-live="polite" aria-atomic="true"></span>
             <div class="camera-guide">
-                <span id="camera-guide-copy">Everything inside this square will be analyzed</span>
+                <span id="camera-guide-copy">Everything inside this square is analysed</span>
+            </div>
+            <div class="camera-hud" aria-hidden="true">
+                <span>224 px</span>
+                <span id="hud-cam-frames">0 fr</span>
+                <span id="hud-cam-ms">— ms</span>
             </div>
         </div>
 
@@ -421,7 +455,37 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
 </section>
 
 <noscript>
-    <div class="noscript-warning">CropSCOUT Vision needs JavaScript to analyze images locally in your browser.</div>
+    <div class="noscript-warning">CropSCOUT Vision needs JavaScript to analyse images locally in your browser.</div>
 </noscript>
+
+<script type="module">
+// HUD telemetry: read the engine's read-only live snapshot a few times a second.
+// Display only; nothing here influences a result.
+const hud = {
+    mode: document.getElementById('hud-mode'),
+    frames: document.getElementById('hud-frames'),
+    ms: document.getElementById('hud-ms'),
+    camFrames: document.getElementById('hud-cam-frames'),
+    camMs: document.getElementById('hud-cam-ms'),
+};
+const detectorRequested = new URLSearchParams(window.location.search).get('detector') === '1';
+function tick() {
+    const api = window.CropScoutVision;
+    if (api && typeof api.liveStats === 'function') {
+        const s = api.liveStats();
+        const ms = s.avgFrameMs ? `${Math.round(s.avgFrameMs)} ms` : '— ms';
+        const modeText = s.running
+            ? (s.mode === 'leaves' ? 'LEAF FINDER' : 'SQUARE')
+            : (detectorRequested ? 'LEAF FINDER' : 'SQUARE');
+        if (hud.mode) hud.mode.textContent = modeText;
+        if (hud.frames) hud.frames.textContent = String(s.frames || 0);
+        if (hud.ms) hud.ms.textContent = ms;
+        if (hud.camFrames) hud.camFrames.textContent = `${s.frames || 0} fr`;
+        if (hud.camMs) hud.camMs.textContent = ms;
+    }
+    window.setTimeout(tick, 400);
+}
+tick();
+</script>
 </body>
 </html>

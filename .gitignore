@@ -1,5 +1,6 @@
 .venv/
 node_modules/
+.claude/
 __pycache__/
 .DS_Store
 # Datasets and model weights are large and have their own licenses: keep them out of git
