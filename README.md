@@ -7,7 +7,7 @@ Farmers shouldn't need to take a photo, upload it and wait. CropSCOUT Live runs 
 ## Demo
 
 ```bash
-scripts/link-models.sh /path/to/onnx/models   # puts the 4 model files into vision/private/
+scripts/link-models.sh /path/to/onnx/models   # puts the model files into vision/private/
 scripts/serve.sh                               # http://localhost:8080/vision/
 ```
 
@@ -15,6 +15,7 @@ scripts/serve.sh                               # http://localhost:8080/vision/
 2. Press **Live camera** and hold a tomato leaf inside the square.
 3. A confirmed label appears in about 1–2 seconds.
 4. Press the shutter to **freeze** the frame and get the full report, with the red AI evidence map.
+5. To try the **leaf finder** on a whole plant, open `http://localhost:8080/vision/?detector=1`. Each tomato leaf or fruit it finds gets its own box and its own result.
 
 On a phone the camera needs HTTPS, so open the deployed site or tunnel your local server.
 
@@ -32,14 +33,15 @@ camera ─► centre square ─► 224 px ─► crop/type model ─► conditio
    - A verdict appears only when 3 of the last 4 frames agree, and it is withdrawn once fewer than 2 still do.
    - It is cleared at once if the crop is lost.
 5. **Private.** Frames are analysed in browser memory and never leave the phone.
+6. **Leaf finder (optional, `?detector=1`).** A small YOLO26n detector finds each tomato leaf and fruit in a busy frame. Each one is cut out and goes through steps 1–4 on its own, with its own smoothing and votes. When one leaf fills the square, the square is analysed exactly as above.
 
-Details: [docs/how-it-works.md](docs/how-it-works.md)
+Details: [docs/how-it-works.md](docs/how-it-works.md) · [docs/leaf-finder.md](docs/leaf-finder.md)
 
 ## Tech stack
 
 | Part | What we used |
 |---|---|
-| Models | Ultralytics YOLO26 image classifiers (n and s sizes), exported to ONNX |
+| Models | Ultralytics YOLO26 image classifiers (n and s sizes) and a YOLO26n leaf/fruit detector, exported to ONNX |
 | In-browser AI | onnxruntime-web 1.29, WebAssembly, 1 thread (works on iPhone and Android) |
 | Camera | `getUserMedia`, `requestVideoFrameCallback`, a centre-square crop |
 | Web | Plain JavaScript (ES modules), HTML/CSS, a small PHP backend that serves the models and stores field notes (SQLite) |
@@ -97,6 +99,7 @@ We looked for public tomato datasets taken **in the field**, because a live came
 | `docs/` | How it works, speed, dataset research, browser AI notes |
 | `tests/` | Fake-camera end-to-end tests |
 | `tools/benchmark/` | Model speed scripts |
+| `tools/detector/` | Leaf finder: fetch the box datasets, build, train, export, evaluate |
 | `scripts/` | Link the models and run a local server |
 
 *Screening support only. Confirm uncertain or severe symptoms with a local agronomist before treatment.*

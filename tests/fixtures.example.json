@@ -1,5 +1,5 @@
 {
-  "description": "Example fixture list for live-e2e.mjs. Copy to fixtures.local.json (gitignored) and replace the placeholder paths with real absolute paths. Each fixture needs exactly one of: \"path\" (an image), \"dir\" (a folder; the first image by sorted file name is used) or \"synthetic\" (\"noise\" or \"grey\"). \"expected\" is free text shown in the report.",
+  "description": "Example fixture list for live-e2e.mjs. Copy to fixtures.local.json (gitignored) and replace the placeholder paths with real absolute paths. Each fixture needs exactly one of: \"path\" (an image), \"dir\" (a folder; the first image by sorted file name is used) or \"synthetic\" (\"noise\" or \"grey\"). \"expected\" is free text shown in the report. \"scene\": \"plant\" marks a busy scene with several leaves: photo mode is not the reference there, so those fixtures are reported in the leaf finder table instead of the agreement count.",
   "fixtures": [
     { "id": "user-tomato-fruit", "path": "/path/to/photos/tomato-fruit.jpg", "expected": "Tomato_fruit_healthy" },
     { "id": "user-tomato-leaf-septoria", "path": "/path/to/photos/tomato-leaf-septoria.jpg", "expected": "Tomato_leaf_septoria_leaf_spot" },
@@ -22,6 +22,13 @@
     { "id": "class-tomato-leaf-tomato-mosaic-virus", "dir": "/path/to/dataset/val/Tomato_leaf_tomato_mosaic_virus", "expected": "Tomato_leaf_tomato_mosaic_virus" },
     { "id": "class-tomato-leaf-two-spotted-spider-mite", "dir": "/path/to/dataset/val/Tomato_leaf_two_spotted_spider_mite", "expected": "Tomato_leaf_two_spotted_spider_mite" },
     { "id": "class-tomato-leaf-yellow-leaf-curl-virus", "dir": "/path/to/dataset/val/Tomato_leaf_yellow_leaf_curl_virus", "expected": "Tomato_leaf_yellow_leaf_curl_virus" },
+
+    { "id": "plant-greenhouse-viral", "path": "/path/to/scenes/plant-greenhouse-viral.png", "scene": "plant", "expected": "several tomato leaves (viral mottling)" },
+    { "id": "plant-greenhouse-dense", "path": "/path/to/scenes/plant-greenhouse-dense.png", "scene": "plant", "expected": "several tomato leaves + green fruit" },
+    { "id": "plant-greenhouse-fruit", "path": "/path/to/scenes/plant-greenhouse-fruit.png", "scene": "plant", "expected": "tomato fruit + leaves (gray mold)" },
+    { "id": "plant-field-potted", "path": "/path/to/scenes/plant-field-potted.png", "scene": "plant", "expected": "several tomato leaves (field)" },
+    { "id": "plant-field-stem", "path": "/path/to/scenes/plant-field-stem.png", "scene": "plant", "expected": "several tomato leaves (field)" },
+    { "id": "plant-canopy-web", "path": "/path/to/scenes/plant-canopy-web.png", "scene": "plant", "expected": "dense tomato canopy (leaf mold)" },
 
     { "id": "no-crop-noise", "synthetic": "noise", "expected": "abstain" },
     { "id": "no-crop-grey", "synthetic": "grey", "expected": "abstain" }

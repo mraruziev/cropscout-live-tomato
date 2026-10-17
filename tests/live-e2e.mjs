@@ -48,10 +48,14 @@ Options:
                         been unchanged this long after the first settled state
                         (default 0 = always watch the full window)
   --model-timeout <s>   wait for #model-state.ready (default 120)
+  --query <qs>          query string for the page, e.g. detector=1 to turn on
+                        the leaf finder (default: none)
   --width/--height/--frames  fake camera clip geometry (1920/1080/30)
   --range limited|full  YUV range for the clip (default: generator default)
   --matrix bt601|bt709  YUV matrix for the clip (default: generator default)
   --headed              show the browser window
+  --screenshots         save the camera view at the end of each live window
+                        as <out>/<id>.live.png
   --keep-y4m            keep generated .y4m clips (about 93 MB each at 1080p)
   --keep-server         leave php -S running for the next run to reuse
   --out <dir>           output directory (default: tests/.out)
@@ -76,12 +80,14 @@ function parseArgs(argv) {
         stopWhenStable: 0,
         modelTimeout: 120,
         uploadTimeout: 90,
+        query: '',
         width: 1920,
         height: 1080,
         frames: 30,
         range: null,
         matrix: null,
         headed: false,
+        screenshots: false,
         keepY4m: false,
         keepServer: false,
         out: path.join(HERE, '.out'),
@@ -90,7 +96,7 @@ function parseArgs(argv) {
         python: process.env.CROPSCOUT_PYTHON || (fs.existsSync(DEFAULT_PYTHON) ? DEFAULT_PYTHON : 'python3'),
         calibrate: false,
     };
-    const flags = new Set(['list', 'headed', 'keep-y4m', 'keep-server', 'calibrate', 'help']);
+    const flags = new Set(['list', 'headed', 'keep-y4m', 'keep-server', 'calibrate', 'help', 'screenshots']);
     const numbers = new Set(['port', 'live-seconds', 'poll-ms', 'stop-when-stable', 'model-timeout',
         'upload-timeout', 'width', 'height', 'frames']);
     for (let i = 0; i < argv.length; i += 1) {
@@ -193,6 +199,9 @@ function loadFixtures(opts) {
             source: source || null,
             expected: entry.expected ?? '',
             note: entry.note ?? '',
+            // "plant": a busy scene with several leaves. Photo mode is not the
+            // reference there (one leaf no longer fills the square).
+            scene: entry.scene === 'plant' ? 'plant' : 'single',
             problem,
         };
     });
@@ -673,6 +682,9 @@ async function runLive(page, pngPath, opts) {
         return { log: h.log, draws: h.draws, updates: h.updates, installed: h.installed };
     });
     const cameraStatus = (await page.locator('#camera-status').textContent().catch(() => '') || '').trim();
+    if (opts.screenshots) {
+        await page.locator('#camera-view').screenshot({ path: pngPath.replace(/\.square\.png$/, '.live.png') }).catch(() => {});
+    }
     await page.locator('#close-camera-button').click();
     await page.locator('#camera-panel').waitFor({ state: 'hidden', timeout: 5000 });
 
@@ -755,6 +767,29 @@ async function runLive(page, pngPath, opts) {
     const useStats = hasLiveStats && stats && Number.isFinite(stats.frames);
     const round = (v) => (v === null || v === undefined || !Number.isFinite(v) ? null : Math.round(v));
 
+    // Leaf finder (only when the page reports it): how often it split the
+    // square into leaves, and what each leaf showed at the end of the window.
+    const modeSamples = samples.filter((sample) => sample.stats?.mode);
+    const leafSamples = modeSamples.filter((sample) => sample.stats.mode === 'leaves');
+    const leafFinder = modeSamples.length && Number.isFinite(stats?.avgDetectorMs) && stats.avgDetectorMs > 0
+        ? {
+            leavesModeShare: Math.round((100 * leafSamples.length) / modeSamples.length),
+            maxLeaves: Math.max(0, ...leafSamples.map((sample) => sample.stats.leaves?.length || 0)),
+            finalMode: stats.mode,
+            finalLeaves: (stats.leaves || []).map((leaf) => ({
+                box: leaf.box,
+                score: leaf.score,
+                kind: leaf.kind,
+                state: leaf.state,
+                crop: leaf.crop,
+                condition: leaf.condition,
+                shown: leaf.shown,
+            })),
+            shownLeaves: (stats.leaves || []).filter((leaf) => leaf.shown).length,
+            avgDetectorMs: round(stats.avgDetectorMs),
+        }
+        : null;
+
     return {
         verdict: final,
         finalText: finalDom ? { state: finalDom.state, crop: finalDom.crop, cond: finalDom.cond } : null,
@@ -776,6 +811,7 @@ async function runLive(page, pngPath, opts) {
         },
         hasLiveStats,
         liveStats: stats,
+        leafFinder,
         statsError: lastSample?.statsError || null,
         windowMs: Math.round(windowEnd - t0),
         instrumentationInstalled: H.installed,
@@ -817,6 +853,7 @@ async function runFixture(fixture, opts, server) {
         id: fixture.id,
         source: fixture.source,
         expected: fixture.expected,
+        scene: fixture.scene,
         ok: false,
         error: null,
     };
@@ -840,7 +877,8 @@ async function runFixture(fixture, opts, server) {
             if (message.type() === 'error') pageErrors.push(`console: ${message.text()}`);
         });
         const loadStart = Date.now();
-        await page.goto(`http://localhost:${server.port}/vision/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        const query = opts.query ? `?${opts.query.replace(/^\?/, '')}` : '';
+        await page.goto(`http://localhost:${server.port}/vision/${query}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
         const modelState = await page.waitForFunction(() => {
             const el = document.querySelector('#model-state');
             if (!el) return null;
@@ -906,6 +944,7 @@ function buildReport(results, meta) {
     lines.push('');
     lines.push(`- Date: ${meta.date}`);
     lines.push(`- Root: \`${meta.root}\` (served with php -S on port ${meta.port})`);
+    if (meta.query) lines.push(`- Page: \`/vision/?${meta.query.replace(/^\?/, '')}\``);
     lines.push(`- Fixtures: \`${meta.fixturesFile}\` (${results.length} run)`);
     lines.push(`- Browser: Google Chrome ${meta.chrome || '?'} (${meta.headed ? 'headed' : 'headless'})`);
     lines.push(`- Fake camera: ${meta.width}x${meta.height} Y4M, still frame; live window ${meta.liveSeconds} s, poll ${meta.pollMs} ms`);
@@ -932,9 +971,12 @@ function buildReport(results, meta) {
         ].join(' | ').trim());
     }
     const ok = results.filter((r) => r.ok);
+    const single = ok.filter((r) => r.scene !== 'plant');
+    const plants = ok.filter((r) => r.scene === 'plant');
     lines.push('');
-    lines.push(`Agreement: ${ok.filter((r) => r.agree).length}/${ok.length}. `
-        + `Live condition verdicts: ${ok.filter((r) => r.live.verdict.kind === 'condition').length}/${ok.length}.`);
+    lines.push(`Agreement: ${single.filter((r) => r.agree).length}/${single.length}. `
+        + `Live condition verdicts: ${single.filter((r) => r.live.verdict.kind === 'condition').length}/${single.length}.`
+        + (plants.length ? ` (${plants.length} whole-plant scene${plants.length > 1 ? 's' : ''} not counted: photo mode is not the reference there.)` : ''));
     lines.push('');
     lines.push('- time-to-verdict: from the Live camera click to the first `is-identified` state showing a condition '
         + '(not "checking"/"confirming"). If no condition verdict appeared, the time to the first settled state '
@@ -944,6 +986,30 @@ function buildReport(results, meta) {
     if (estimatedUsed) {
         lines.push('- `*` frames / avg ms estimated by page instrumentation (no `liveStats()` hook): one frame = one '
             + '`drawImage(video)`; frame ms = time from that draw to the last overlay update before the next draw.');
+    }
+    const finder = ok.filter((r) => r.live.leafFinder);
+    if (finder.length) {
+        lines.push('');
+        lines.push('## Leaf finder');
+        lines.push('');
+        lines.push('| fixture | scene | frames split into leaves | most leaves in a frame | leaves at the end (shown verdict, else state) | detector ms | frame ms | cycle ms |');
+        lines.push('|---|---|---|---|---|---|---|---|');
+        for (const r of finder) {
+            const f = r.live.leafFinder;
+            const leaves = f.finalMode === 'leaves' && f.finalLeaves.length
+                ? f.finalLeaves.map((leaf) => {
+                    const shown = leaf.shown ? leaf.shown.split('|').pop() : '';
+                    return `${leaf.kind.replace('tomato_', '')} ${Math.round(leaf.score * 100)}%: ${shown ? shortCondition(shown) : leaf.state}`;
+                }).join('; ')
+                : 'whole square';
+            const cycle = r.live.frames > 1 ? Math.round(r.live.windowMs / r.live.frames) : '—';
+            lines.push(['', md(r.id), r.scene, `${f.leavesModeShare}%`, f.maxLeaves, md(leaves),
+                f.avgDetectorMs ?? '—', r.live.avgFrameMs ?? '—', cycle, ''].join(' | ').trim());
+        }
+        lines.push('');
+        lines.push('- detector ms: the leaf finder on the 320 px square (resize included). frame ms: all work for one frame '
+            + '(detector, cutting out each leaf, both classifiers per leaf). cycle ms: live window / frames analysed. '
+            + 'Box scores are the detector\'s; every verdict comes from the classifiers and safeguards.');
     }
     lines.push('');
     lines.push('## Diagnostics');
@@ -1089,6 +1155,7 @@ async function main() {
             height: opts.height,
             liveSeconds: opts.liveSeconds,
             pollMs: opts.pollMs,
+            query: opts.query,
             totalMs: Date.now() - runStarted,
         });
         process.stdout.write(`\n${report}`);

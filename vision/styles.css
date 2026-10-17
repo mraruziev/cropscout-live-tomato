@@ -460,6 +460,53 @@ summary:focus-visible {
     z-index: 0;
 }
 
+/* Leaf finder boxes, positioned in % of the square the models see. */
+.live-leaf-boxes {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.live-leaf-box {
+    position: absolute;
+    border: 2px solid var(--gold);
+    border-radius: 0.4rem;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45);
+}
+
+.live-leaf-box.is-identified {
+    border-color: var(--green-bright);
+}
+
+.live-leaf-box.is-uncertain,
+.live-leaf-box.is-error {
+    border-style: dashed;
+    border-color: rgba(243, 239, 230, 0.6);
+}
+
+.live-leaf-box span {
+    max-width: calc(100% + 4px);
+    padding: 0.1rem 0.35rem;
+    position: absolute;
+    left: -2px;
+    bottom: 100%;
+    overflow: hidden;
+    border-radius: 0.3rem 0.3rem 0 0;
+    background: rgba(5, 5, 4, 0.82);
+    color: var(--text);
+    font-size: 0.66rem;
+    font-weight: 700;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.live-leaf-box.is-at-top span {
+    top: 0;
+    bottom: auto;
+    border-radius: 0 0 0.3rem 0;
+}
+
 .camera-view.is-live-scanning::after {
     content: "";
     height: 2px;

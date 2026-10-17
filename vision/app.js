@@ -36,6 +36,15 @@ const LIVE_RETRY_MS = 250;
 const LIVE_VOTE_WINDOW = 4;
 const LIVE_VOTES_TO_SHOW = 3;
 const LIVE_VOTES_TO_HOLD = 2;
+// Leaf finder (feature flag): open the page with ?detector=1. It also needs a
+// leaf_detector entry in the release metadata.
+const LEAF_FINDER_ENDPOINT = 'model.php?model=leaf-detector';
+const LEAF_FINDER_REQUESTED = new URLSearchParams(window.location.search).get('detector') === '1';
+// A detected leaf keeps its track while its box overlaps last frame's box by
+// at least this much, and loses it after this many frames in a row unseen.
+const LIVE_TRACK_MIN_IOU = 0.3;
+const LIVE_TRACK_MAX_MISSES = 2;
+const LIVE_DUPLICATE_IOU = 0.7;
 const MAX_FILE_BYTES = 15 * 1024 * 1024;
 const MAX_SOURCE_PIXELS = 40_000_000;
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
@@ -75,6 +84,8 @@ const elements = {
     liveCropResult: document.querySelector('#live-crop-result'),
     liveConditionResult: document.querySelector('#live-condition-result'),
     liveRecognitionAnnouncement: document.querySelector('#live-recognition-announcement'),
+    liveLeafBoxes: document.querySelector('#live-leaf-boxes'),
+    cameraGuideCopy: document.querySelector('#camera-guide-copy'),
     cameraStatus: document.querySelector('#camera-status'),
     captureCamera: document.querySelector('#capture-camera-button'),
     switchCamera: document.querySelector('#switch-camera-button'),
@@ -171,15 +182,13 @@ let cameraRequestGeneration = 0;
 let cameraDevices = [];
 let activeCameraDeviceId = '';
 let preferredCameraFacing = 'environment';
-let liveSmoothedCropProbabilities = null;
-let liveSmoothedConditionProbabilities = null;
-const liveConditionSmoothingByModel = new Map();
-let liveConditionFamily = '';
-let liveConditionRoute = '';
-let liveVerdictVotes = [];
+// The whole centre square is one live track. With the leaf finder on, each
+// detected leaf or fruit gets its own track: its own smoothing, its own votes
+// and its own shown verdict.
+let liveSquareTrack = createLiveTrack('square');
+let liveLeafTracks = [];
+let liveNextTrackId = 1;
 let liveLoopGeneration = 0;
-let liveShownVerdict = null;
-let liveConditionDisplayReady = false;
 let lastLiveAnnouncement = '';
 const liveStats = {
     running: false,
@@ -187,6 +196,10 @@ const liveStats = {
     lastFrameMs: 0,
     avgFrameMs: 0,
     lastPreprocessMs: 0,
+    mode: 'square',
+    lastDetectorMs: 0,
+    avgDetectorMs: 0,
+    leaves: [],
     display: { state: 'loading', crop: '', condition: '' },
 };
 const activeLiveRecognitions = new Set();
@@ -440,33 +453,51 @@ function announceLiveRecognition(message) {
     elements.liveRecognitionAnnouncement.textContent = message;
 }
 
-function resetLiveConditionTracking(family = '', route = '') {
-    liveSmoothedConditionProbabilities = null;
-    liveConditionSmoothingByModel.clear();
-    liveConditionFamily = family;
-    liveConditionRoute = route;
-    liveVerdictVotes = [];
-    liveShownVerdict = null;
-    liveConditionDisplayReady = false;
+function createLiveTrack(id, box = null) {
+    return {
+        id,
+        box,
+        score: 1,
+        misses: 0,
+        smoothedCrop: null,
+        conditionFamily: '',
+        conditionRoute: '',
+        conditionSmoothingByModel: new Map(),
+        votes: [],
+        shown: null,
+        conditionDisplayReady: false,
+        status: null,
+    };
 }
 
-// Records this frame's gated outcome and returns what the live chip may show.
-// `key` is empty when the frame did not pass every safeguard.
-function voteLiveVerdict(key, text) {
-    liveVerdictVotes = [...liveVerdictVotes, key].slice(-LIVE_VOTE_WINDOW);
-    const votesFor = (candidate) => liveVerdictVotes.filter((vote) => vote === candidate).length;
+function resetLiveConditionTracking(track, family = '', route = '') {
+    track.conditionSmoothingByModel.clear();
+    track.conditionFamily = family;
+    track.conditionRoute = route;
+    track.votes = [];
+    track.shown = null;
+    track.conditionDisplayReady = false;
+}
 
-    if (liveShownVerdict && votesFor(liveShownVerdict.key) >= LIVE_VOTES_TO_HOLD) {
-        if (key === liveShownVerdict.key) liveShownVerdict = { key, text };
-        return { shown: liveShownVerdict };
+// Records this frame's gated outcome for one track and returns what it may
+// show. `key` is empty when the frame did not pass every safeguard.
+function voteLiveVerdict(track, key, text) {
+    track.votes = [...track.votes, key].slice(-LIVE_VOTE_WINDOW);
+    const votesFor = (candidate) => track.votes.filter((vote) => vote === candidate).length;
+
+    if (track.shown && votesFor(track.shown.key) >= LIVE_VOTES_TO_HOLD) {
+        if (key === track.shown.key) track.shown = { key, text };
+        return { shown: track.shown };
     }
-    liveShownVerdict = key && votesFor(key) >= LIVE_VOTES_TO_SHOW ? { key, text } : null;
-    return { shown: liveShownVerdict, pending: key ? votesFor(key) : 0 };
+    track.shown = key && votesFor(key) >= LIVE_VOTES_TO_SHOW ? { key, text } : null;
+    return { shown: track.shown, pending: key ? votesFor(key) : 0 };
 }
 
 function resetLiveRecognition() {
-    liveSmoothedCropProbabilities = null;
-    resetLiveConditionTracking();
+    liveSquareTrack = createLiveTrack('square');
+    liveLeafTracks = [];
+    renderLiveLeafBoxes([]);
+    Object.assign(liveStats, { mode: 'square', leaves: [] });
     lastLiveAnnouncement = '';
     elements.liveRecognitionAnnouncement.textContent = '';
     elements.cameraView.classList.remove('is-live-scanning');
@@ -679,15 +710,10 @@ async function requestCamera({ deviceId = '', facingMode = preferredCameraFacing
     }).catch(() => {});
 }
 
-async function liveVideoTensor() {
-    const videoWidth = elements.cameraVideo.videoWidth;
-    const videoHeight = elements.cameraVideo.videoHeight;
-    if (!videoWidth || !videoHeight) return null;
-
-    const sourceSide = Math.min(videoWidth, videoHeight);
-    const sourceX = (videoWidth - sourceSide) / 2;
-    const sourceY = (videoHeight - sourceSide) / 2;
-    const steps = [sourceSide];
+// Draws a square region of the video, halved 2:1 by the browser while it stays
+// at least twice the model size, and returns its pixels.
+function sampleVideoSquare(left, top, side) {
+    const steps = [side];
     while (steps.at(-1) / 2 >= LIVE_MIN_SAMPLE_SIDE) steps.push(Math.round(steps.at(-1) / 2));
     const canvas = document.createElement('canvas');
     canvas.width = steps[Math.min(1, steps.length - 1)];
@@ -698,10 +724,10 @@ async function liveVideoTensor() {
     context.imageSmoothingQuality = 'high';
     context.drawImage(
         elements.cameraVideo,
-        sourceX,
-        sourceY,
-        sourceSide,
-        sourceSide,
+        left,
+        top,
+        side,
+        side,
         0,
         0,
         canvas.width,
@@ -714,14 +740,33 @@ async function liveVideoTensor() {
     }
     const sampleSide = steps.at(-1);
     const rgba = context.getImageData(0, 0, sampleSide, sampleSide).data;
+    canvas.width = 1;
+    canvas.height = 1;
+    return { rgba, side: sampleSide };
+}
+
+function liveSquareSample() {
+    const videoWidth = elements.cameraVideo.videoWidth;
+    const videoHeight = elements.cameraVideo.videoHeight;
+    if (!videoWidth || !videoHeight) return null;
+
+    const sourceSide = Math.min(videoWidth, videoHeight);
+    const sourceX = (videoWidth - sourceSide) / 2;
+    const sourceY = (videoHeight - sourceSide) / 2;
+    const sample = sampleVideoSquare(sourceX, sourceY, sourceSide);
+    return sample && { ...sample, sourceX, sourceY, sourceSide };
+}
+
+// Antialiased resize to the model size (same as photo mode), as an RGB CHW tensor.
+async function squareTensor(rgba, sourceSide, outputSide) {
     const resizedRgb = await resizeRgbAntialiased(
         rgba,
-        sampleSide,
-        sampleSide,
-        IMAGE_SIZE,
-        IMAGE_SIZE
+        sourceSide,
+        sourceSide,
+        outputSide,
+        outputSide
     );
-    const planeSize = IMAGE_SIZE * IMAGE_SIZE;
+    const planeSize = outputSide * outputSide;
     const chw = new Float32Array(planeSize * 3);
     for (let index = 0; index < planeSize; index += 1) {
         const rgbOffset = index * 3;
@@ -729,32 +774,55 @@ async function liveVideoTensor() {
         chw[planeSize + index] = Math.round(resizedRgb[rgbOffset + 1]) / 255;
         chw[(planeSize * 2) + index] = Math.round(resizedRgb[rgbOffset + 2]) / 255;
     }
-    canvas.width = 1;
-    canvas.height = 1;
-    return new ort.Tensor('float32', chw, [1, 3, IMAGE_SIZE, IMAGE_SIZE]);
+    return new ort.Tensor('float32', chw, [1, 3, outputSide, outputSide]);
 }
 
-function smoothLiveConditionProbabilities(probabilities, family, route = 'base', modelId = route) {
-    if (liveConditionFamily !== family || liveConditionRoute !== route) {
-        resetLiveConditionTracking(family, route);
+async function liveVideoTensor(square = liveSquareSample()) {
+    if (!square) return null;
+    return squareTensor(square.rgba, square.side, IMAGE_SIZE);
+}
+
+// One detected leaf or fruit: a square around its box, cut from the
+// full-resolution video inside the centre square, so a small leaf keeps its
+// detail. It goes through the same 2:1 halving and resize as the whole square.
+async function liveLeafTensor(square, box, padding) {
+    const [x1, y1, x2, y2] = box;
+    const fraction = Math.min(1, Math.max(x2 - x1, y2 - y1) * padding);
+    const side = Math.max(2, Math.min(
+        Math.round((fraction * square.sourceSide) / 2) * 2,
+        square.sourceSide - (square.sourceSide % 2)
+    ));
+    const clamp = (value, origin) => Math.min(
+        Math.max(Math.round(value), origin),
+        origin + square.sourceSide - side
+    );
+    const left = clamp(square.sourceX + (((x1 + x2) / 2) * square.sourceSide) - (side / 2), square.sourceX);
+    const top = clamp(square.sourceY + (((y1 + y2) / 2) * square.sourceSide) - (side / 2), square.sourceY);
+    const sample = sampleVideoSquare(left, top, side);
+    if (!sample) return null;
+    return squareTensor(sample.rgba, sample.side, IMAGE_SIZE);
+}
+
+function smoothLiveConditionProbabilities(track, probabilities, family, route = 'base', modelId = route) {
+    if (track.conditionFamily !== family || track.conditionRoute !== route) {
+        resetLiveConditionTracking(track, family, route);
     }
-    const previous = liveConditionSmoothingByModel.get(modelId);
-    liveSmoothedConditionProbabilities = !previous || previous.length !== probabilities.length
+    const previous = track.conditionSmoothingByModel.get(modelId);
+    const smoothed = !previous || previous.length !== probabilities.length
         ? probabilities.slice()
         : probabilities.map((value, index) => (value * 0.62) + (previous[index] * 0.38));
-    liveConditionSmoothingByModel.set(modelId, liveSmoothedConditionProbabilities);
-    return liveSmoothedConditionProbabilities;
+    track.conditionSmoothingByModel.set(modelId, smoothed);
+    return smoothed;
 }
 
-function smoothLiveCropProbabilities(probabilities) {
-    if (!liveSmoothedCropProbabilities
-        || liveSmoothedCropProbabilities.length !== probabilities.length) {
-        liveSmoothedCropProbabilities = probabilities.slice();
-        return liveSmoothedCropProbabilities;
+function smoothLiveCropProbabilities(track, probabilities) {
+    if (!track.smoothedCrop || track.smoothedCrop.length !== probabilities.length) {
+        track.smoothedCrop = probabilities.slice();
+        return track.smoothedCrop;
     }
-    liveSmoothedCropProbabilities = probabilities.map((value, index) =>
-        (value * 0.62) + (liveSmoothedCropProbabilities[index] * 0.38));
-    return liveSmoothedCropProbabilities;
+    track.smoothedCrop = probabilities.map((value, index) =>
+        (value * 0.62) + (track.smoothedCrop[index] * 0.38));
+    return track.smoothedCrop;
 }
 
 function waitForNextLiveFrame(delay, generation = cameraRequestGeneration) {
@@ -833,6 +901,138 @@ async function runLiveRecognition(generation) {
     }
 }
 
+function showLiveStatus(status) {
+    setLiveRecognition(status.state, status.crop, status.condition);
+    announceLiveRecognition(status.announcement);
+}
+
+// Runs the crop/type gate, the condition route and the frame vote for one live
+// track (the whole square, or one leaf found by the leaf finder) and returns
+// what that track may show. Every safeguard applies to each track on its own
+// smoothed scores and its own votes. Returns null when this camera session ended.
+async function assessLiveTrack(runtime, track, tensor, isCurrent, onCheckingCondition = null) {
+    const cropProbabilities = await runClassifier(
+        runtime.cropViewSession,
+        tensor,
+        runtime.metadata.cropViewClasses.length,
+        'The live crop/view model'
+    );
+    if (!isCurrent()) return null;
+
+    const smoothed = smoothLiveCropProbabilities(track, cropProbabilities);
+    const rankedCropViews = rankClasses(smoothed, runtime.metadata.cropViewClasses);
+    const topCropView = rankedCropViews[0];
+    const parsed = parseCropView(topCropView.label);
+    const abstention = cropAbstention(
+        rankedCropViews,
+        parsed,
+        runtime.metadata.thresholds
+    );
+
+    if (abstention) {
+        // Losing the crop clears any shown verdict at once; no hold-over.
+        resetLiveConditionTracking(track);
+        return {
+            state: 'uncertain',
+            crop: parsed.crop
+                ? `Possible ${displayCropName(parsed.crop, parsed.view)} ${parsed.view}`
+                : 'No supported crop yet',
+            condition: parsed.crop
+                ? `${scorePercent(topCropView.confidence)} weak match · keep one crop centered`
+                : 'Fill the square with an apple, tomato, cucumber, or lemon',
+            announcement: parsed.crop
+                ? 'Crop match is not reliable yet.'
+                : 'No supported crop is recognized yet.',
+        };
+    }
+
+    const cropDisplay = displayCropName(parsed.crop, parsed.view);
+    const cropLabel = `${cropDisplay} ${parsed.view}`;
+    const family = `${parsed.crop}_${parsed.view}`;
+    const routeId = conditionRouteId(runtime, family);
+    if (track.conditionFamily !== family || track.conditionRoute !== routeId) {
+        resetLiveConditionTracking(track, family, routeId);
+    }
+    if (liveSpecialistLoading(runtime, parsed.crop, parsed.view)) {
+        return {
+            state: 'loading',
+            crop: cropLabel,
+            condition: `${scorePercent(topCropView.confidence)} crop match · loading its condition model…`,
+            announcement: `${cropLabel} identified. Loading its condition model.`,
+        };
+    }
+    if (!track.conditionDisplayReady && onCheckingCondition) {
+        onCheckingCondition({
+            state: 'identified',
+            crop: cropLabel,
+            condition: `${scorePercent(topCropView.confidence)} crop match · checking condition…`,
+            announcement: `${cropLabel} identified. Checking condition.`,
+        });
+    }
+
+    const identity = Object.freeze({
+        crop: parsed.crop,
+        organ: parsed.view,
+        overridden: false,
+        topCropView,
+        automaticLabel: humanizeClass(topCropView.label),
+    });
+    const evaluated = await assessConditionRoute(
+        runtime,
+        identity,
+        tensor,
+        {
+            live: true,
+            isCurrent,
+            smooth: (probabilities, route, modelId) =>
+                smoothLiveConditionProbabilities(track, probabilities, family, route, modelId),
+        }
+    );
+    if (!evaluated) return null;
+    const assessment = evaluated.assessment;
+    track.conditionDisplayReady = true;
+
+    if (!assessment) {
+        track.votes = [];
+        track.shown = null;
+        return {
+            state: 'identified',
+            crop: cropLabel,
+            condition: `${scorePercent(topCropView.confidence)} crop match · no covered condition for this view`,
+            announcement: `${cropLabel} identified. No covered condition is available for this view.`,
+        };
+    }
+    const passed = assessment.result.certainty === 'high-confidence screen'
+        || assessment.result.certainty === 'healthy-like pattern';
+    const vote = voteLiveVerdict(
+        track,
+        passed ? `${family}|${assessment.result.certainty}|${assessment.result.condition}` : '',
+        passed ? `${assessment.result.condition} · ${scorePercent(assessment.result.conditionScore)}` : ''
+    );
+    if (vote.shown) {
+        return {
+            state: 'identified',
+            crop: cropLabel,
+            condition: vote.shown.text,
+            announcement: `${cropLabel}. ${vote.shown.text.split(' · ')[0]}.`,
+        };
+    }
+    if (passed) {
+        return {
+            state: 'loading',
+            crop: cropLabel,
+            condition: `Condition pattern found · confirming (${vote.pending}/${LIVE_VOTES_TO_SHOW})…`,
+            announcement: `${cropLabel} identified. Checking condition.`,
+        };
+    }
+    return {
+        state: 'uncertain',
+        crop: cropLabel,
+        condition: 'Condition not reliable yet · hold steady or move closer',
+        announcement: `${cropLabel} identified. Condition is not reliable yet.`,
+    };
+}
+
 // Analyses one live frame. Returns the milliseconds of work done, or null when
 // this camera session ended (or hit a terminal error) and the loop must stop.
 async function analyseLiveFrame(runtime, generation) {
@@ -840,132 +1040,22 @@ async function analyseLiveFrame(runtime, generation) {
     const started = performance.now();
     let tensor = null;
     try {
+        if (runtime.leafDetector) return await analyseLiveLeaves(runtime, isCurrent, started);
+
         tensor = await liveVideoTensor();
         const preprocessMs = performance.now() - started;
         if (!isCurrent()) return null;
         if (!tensor) return 0;
 
-        const cropProbabilities = await runClassifier(
-            runtime.cropViewSession,
-            tensor,
-            runtime.metadata.cropViewClasses.length,
-            'The live crop/view model'
-        );
-        if (!isCurrent()) return null;
-
-        const smoothed = smoothLiveCropProbabilities(cropProbabilities);
-        const rankedCropViews = rankClasses(smoothed, runtime.metadata.cropViewClasses);
-        const topCropView = rankedCropViews[0];
-        const parsed = parseCropView(topCropView.label);
-        const abstention = cropAbstention(
-            rankedCropViews,
-            parsed,
-            runtime.metadata.thresholds
-        );
-
-        if (abstention) {
-            // Losing the crop clears any shown verdict at once; no hold-over.
-            resetLiveConditionTracking();
-            const closest = parsed.crop
-                ? `Possible ${displayCropName(parsed.crop, parsed.view)} ${parsed.view}`
-                : 'No supported crop yet';
-            setLiveRecognition(
-                'uncertain',
-                closest,
-                parsed.crop
-                    ? `${scorePercent(topCropView.confidence)} weak match · keep one crop centered`
-                    : 'Fill the square with an apple, tomato, cucumber, or lemon'
-            );
-            announceLiveRecognition(parsed.crop
-                ? 'Crop match is not reliable yet.'
-                : 'No supported crop is recognized yet.');
-            recordLiveFrame(performance.now() - started, preprocessMs);
-            return performance.now() - started;
-        }
-
-        const cropDisplay = displayCropName(parsed.crop, parsed.view);
-        const cropLabel = `${cropDisplay} ${parsed.view}`;
-        const family = `${parsed.crop}_${parsed.view}`;
-        const routeId = conditionRouteId(runtime, family);
-        if (liveConditionFamily !== family || liveConditionRoute !== routeId) {
-            resetLiveConditionTracking(family, routeId);
-        }
-        if (liveSpecialistLoading(runtime, parsed.crop, parsed.view)) {
-            setLiveRecognition(
-                'loading',
-                cropLabel,
-                `${scorePercent(topCropView.confidence)} crop match · loading its condition model…`
-            );
-            announceLiveRecognition(`${cropLabel} identified. Loading its condition model.`);
-            recordLiveFrame(performance.now() - started, preprocessMs);
-            return performance.now() - started;
-        }
-        if (!liveConditionDisplayReady) {
-            setLiveRecognition(
-                'identified',
-                cropLabel,
-                `${scorePercent(topCropView.confidence)} crop match · checking condition…`
-            );
-            announceLiveRecognition(`${cropLabel} identified. Checking condition.`);
-        }
-
-        const identity = Object.freeze({
-            crop: parsed.crop,
-            organ: parsed.view,
-            overridden: false,
-            topCropView,
-            automaticLabel: humanizeClass(topCropView.label),
-        });
-        const evaluated = await assessConditionRoute(
-            runtime,
-            identity,
-            tensor,
-            { live: true, isCurrent }
-        );
-        if (!evaluated) return null;
-        const assessment = evaluated.assessment;
-        liveConditionDisplayReady = true;
-
-        if (!assessment) {
-            liveVerdictVotes = [];
-            liveShownVerdict = null;
-            setLiveRecognition(
-                'identified',
-                cropLabel,
-                `${scorePercent(topCropView.confidence)} crop match · no covered condition for this view`
-            );
-            announceLiveRecognition(`${cropLabel} identified. No covered condition is available for this view.`);
-        } else {
-            const passed = assessment.result.certainty === 'high-confidence screen'
-                || assessment.result.certainty === 'healthy-like pattern';
-            const vote = voteLiveVerdict(
-                passed ? `${family}|${assessment.result.certainty}|${assessment.result.condition}` : '',
-                passed ? `${assessment.result.condition} · ${scorePercent(assessment.result.conditionScore)}` : ''
-            );
-            if (vote.shown) {
-                setLiveRecognition('identified', cropLabel, vote.shown.text);
-                announceLiveRecognition(`${cropLabel}. ${vote.shown.text.split(' · ')[0]}.`);
-            } else if (passed) {
-                setLiveRecognition(
-                    'loading',
-                    cropLabel,
-                    `Condition pattern found · confirming (${vote.pending}/${LIVE_VOTES_TO_SHOW})…`
-                );
-                announceLiveRecognition(`${cropLabel} identified. Checking condition.`);
-            } else {
-                setLiveRecognition(
-                    'uncertain',
-                    cropLabel,
-                    'Condition not reliable yet · hold steady or move closer'
-                );
-                announceLiveRecognition(`${cropLabel} identified. Condition is not reliable yet.`);
-            }
-        }
+        const status = await assessLiveTrack(runtime, liveSquareTrack, tensor, isCurrent, showLiveStatus);
+        if (!status) return null;
+        showLiveStatus(status);
         recordLiveFrame(performance.now() - started, preprocessMs);
         return performance.now() - started;
     } catch (error) {
         if (!isCurrent()) return null;
-        resetLiveConditionTracking();
+        resetLiveConditionTracking(liveSquareTrack);
+        liveLeafTracks.forEach((track) => resetLiveConditionTracking(track));
         if (error instanceof VisionError && error.code === 'specialist') {
             setLiveRecognition('error', 'Live condition model unavailable', error.message);
             announceLiveRecognition(error.message);
@@ -977,6 +1067,245 @@ async function analyseLiveFrame(runtime, generation) {
     } finally {
         if (tensor && typeof tensor.dispose === 'function') tensor.dispose();
     }
+}
+
+/* =========================== Leaf finder ===========================
+ *
+ * Optional (add ?detector=1 to the page URL, and the release metadata must
+ * list the model). A small YOLO26n detector finds each tomato leaf or fruit in
+ * the centre square. Each one is cut from the full-resolution video and runs
+ * through the same crop/type gate, condition safeguards and 3-of-4 vote as
+ * the whole square, as its own track:
+ *
+ *   - When one box fills most of the square, or nothing is found, the whole
+ *     square is analysed exactly as without the finder, so a close-up gets the
+ *     same result as photo mode.
+ *   - A track follows a leaf across frames by box overlap. A frame where the
+ *     finder misses the leaf counts like a frame that failed a safeguard: an
+ *     empty vote, which can withdraw a verdict but never confirm one. Two
+ *     misses in a row end the track. Switching between the whole square and
+ *     separate leaves starts every track from scratch.
+ *   - The finder only decides where to look. It never changes a score or a
+ *     threshold.
+ */
+
+function boxSide(box) {
+    return Math.max(box[2] - box[0], box[3] - box[1]);
+}
+
+function boxIou(a, b) {
+    const width = Math.max(0, Math.min(a[2], b[2]) - Math.max(a[0], b[0]));
+    const height = Math.max(0, Math.min(a[3], b[3]) - Math.max(a[1], b[1]));
+    const overlap = width * height;
+    const union = ((a[2] - a[0]) * (a[3] - a[1])) + ((b[2] - b[0]) * (b[3] - b[1])) - overlap;
+    return union > 0 ? overlap / union : 0;
+}
+
+// The detector is exported end-to-end (no NMS step): 1 x N x 6 rows of
+// x1, y1, x2, y2 (input pixels), score, class.
+async function runLeafDetector(detector, input) {
+    const inputName = detector.session.inputNames[0];
+    const outputName = detector.session.outputNames[0];
+    const outputs = await queueOnnxOperation(() => detector.session.run({ [inputName]: input }));
+    const output = outputs[outputName];
+    if (!output || output.dims.length !== 3 || output.dims[0] !== 1 || output.dims[2] !== 6) {
+        throw new VisionError('model', 'The leaf finder returned an unexpected output.');
+    }
+    try {
+        const data = output.data;
+        const size = detector.inputSize;
+        const clamp = (value) => Math.min(1, Math.max(0, value / size));
+        const found = [];
+        for (let row = 0; row < output.dims[1]; row += 1) {
+            const offset = row * 6;
+            const score = data[offset + 4];
+            if (!(score >= detector.scoreThreshold)) continue;
+            const box = [clamp(data[offset]), clamp(data[offset + 1]), clamp(data[offset + 2]), clamp(data[offset + 3])];
+            if (box[2] <= box[0] || box[3] <= box[1]) continue;
+            found.push({ box, score, kind: detector.classes[Math.round(data[offset + 5])] || 'unknown' });
+        }
+        return found;
+    } finally {
+        if (typeof output.dispose === 'function') output.dispose();
+    }
+}
+
+// Matches this frame's boxes to the leaves already being followed and returns
+// the tracks to classify now (at most maxLeaves, best boxes first).
+function matchLiveLeafTracks(detections, detector) {
+    const candidates = [];
+    detections
+        .filter((detection) => boxSide(detection.box) >= detector.minBoxSide)
+        .sort((left, right) => right.score - left.score)
+        .forEach((detection) => {
+            // One object boxed twice (say as leaf and as fruit) keeps its best box.
+            if (candidates.length >= detector.maxLeaves
+                || candidates.some((kept) => boxIou(kept.box, detection.box) > LIVE_DUPLICATE_IOU)) return;
+            candidates.push(detection);
+        });
+    const pairs = [];
+    liveLeafTracks.forEach((track) => candidates.forEach((detection) => {
+        const overlap = boxIou(track.box, detection.box);
+        if (overlap >= LIVE_TRACK_MIN_IOU) pairs.push({ track, detection, overlap });
+    }));
+    pairs.sort((left, right) => right.overlap - left.overlap);
+
+    const active = new Set();
+    const used = new Set();
+    pairs.forEach(({ track, detection }) => {
+        if (active.has(track) || used.has(detection)) return;
+        active.add(track);
+        used.add(detection);
+        Object.assign(track, { box: detection.box, score: detection.score, kind: detection.kind, misses: 0 });
+    });
+    liveLeafTracks = liveLeafTracks.filter((track) => {
+        if (active.has(track)) return true;
+        track.misses += 1;
+        voteLiveVerdict(track, '', '');
+        return track.misses < LIVE_TRACK_MAX_MISSES;
+    });
+    candidates.forEach((detection) => {
+        if (used.has(detection)) return;
+        const track = createLiveTrack(liveNextTrackId, detection.box);
+        liveNextTrackId += 1;
+        Object.assign(track, { score: detection.score, kind: detection.kind });
+        liveLeafTracks.push(track);
+        active.add(track);
+    });
+    return liveLeafTracks.filter((track) => active.has(track));
+}
+
+// Display order only: a shown verdict first (a disease before a healthy-like
+// pattern), then a leaf still being confirmed, then the biggest leaf.
+function liveLeafRank(track) {
+    const shown = track.shown ? (track.shown.key.includes('|high-confidence screen|') ? 3 : 2) : 0;
+    const pending = track.status?.state === 'loading' ? 1 : 0;
+    return (shown * 10) + pending + boxSide(track.box);
+}
+
+function shortLiveLabel(track) {
+    if (track.shown) {
+        const name = track.shown.text.split(' · ')[0];
+        return name === conditionDisplayName({ healthy: true }) ? 'healthy-like' : name;
+    }
+    if (track.status?.state === 'uncertain') return 'not sure';
+    return 'checking…';
+}
+
+function renderLiveLeafBoxes(tracks) {
+    const layer = elements.liveLeafBoxes;
+    if (!layer) return;
+    layer.replaceChildren(...tracks.map((track) => {
+        const [x1, y1, x2, y2] = track.box;
+        const outline = document.createElement('div');
+        outline.className = `live-leaf-box is-${track.shown ? 'identified' : (track.status?.state || 'loading')}`;
+        outline.classList.toggle('is-at-top', y1 < 0.06);
+        outline.style.left = `${(x1 * 100).toFixed(2)}%`;
+        outline.style.top = `${(y1 * 100).toFixed(2)}%`;
+        outline.style.width = `${((x2 - x1) * 100).toFixed(2)}%`;
+        outline.style.height = `${((y2 - y1) * 100).toFixed(2)}%`;
+        const label = document.createElement('span');
+        label.textContent = shortLiveLabel(track);
+        outline.append(label);
+        return outline;
+    }));
+    layer.hidden = tracks.length === 0;
+}
+
+function showLiveLeaves(tracks) {
+    const ranked = tracks.filter((track) => track.status).sort((left, right) => liveLeafRank(right) - liveLeafRank(left));
+    renderLiveLeafBoxes(ranked);
+    liveStats.leaves = ranked.map((track) => ({
+        id: track.id,
+        box: track.box.map((value) => Math.round(value * 1000) / 1000),
+        score: Math.round(track.score * 1000) / 1000,
+        kind: track.kind,
+        state: track.status.state,
+        crop: track.status.crop,
+        condition: track.status.condition,
+        shown: track.shown?.key || '',
+    }));
+    const primary = ranked[0];
+    if (!primary) {
+        setLiveRecognition('uncertain', 'Leaves are too small', 'Move closer so each leaf is bigger in the square');
+        announceLiveRecognition('Leaves are too small. Move closer.');
+        return;
+    }
+    const crop = ranked.length > 1 ? `${primary.status.crop} · ${ranked.length} found` : primary.status.crop;
+    setLiveRecognition(primary.status.state, crop, primary.status.condition);
+    announceLiveRecognition(primary.status.announcement);
+}
+
+function recordDetectorTime(detectorMs) {
+    liveStats.lastDetectorMs = detectorMs;
+    liveStats.avgDetectorMs = liveStats.frames === 0
+        ? detectorMs
+        : (liveStats.avgDetectorMs * 0.8) + (detectorMs * 0.2);
+}
+
+async function analyseLiveLeaves(runtime, isCurrent, started) {
+    const detector = runtime.leafDetector;
+    const square = liveSquareSample();
+    if (!isCurrent()) return null;
+    if (!square) return 0;
+
+    const detectorStarted = performance.now();
+    const detectorInput = await squareTensor(square.rgba, square.side, detector.inputSize);
+    let detections;
+    try {
+        detections = await runLeafDetector(detector, detectorInput);
+    } finally {
+        if (typeof detectorInput.dispose === 'function') detectorInput.dispose();
+    }
+    if (!isCurrent()) return null;
+    const detectorMs = performance.now() - detectorStarted;
+    const largest = detections.reduce((best, detection) => Math.max(best, boxSide(detection.box)), 0);
+    let preprocessMs = detectorStarted - started;
+
+    if (detections.length === 0 || largest >= detector.wholeSquareSide) {
+        if (liveStats.mode !== 'square') {
+            liveSquareTrack = createLiveTrack('square');
+            liveLeafTracks = [];
+            renderLiveLeafBoxes([]);
+            liveStats.leaves = [];
+        }
+        liveStats.mode = 'square';
+        const resizeStarted = performance.now();
+        const tensor = await squareTensor(square.rgba, square.side, IMAGE_SIZE);
+        preprocessMs += performance.now() - resizeStarted;
+        try {
+            if (!isCurrent()) return null;
+            const status = await assessLiveTrack(runtime, liveSquareTrack, tensor, isCurrent, showLiveStatus);
+            if (!status) return null;
+            showLiveStatus(status);
+        } finally {
+            if (typeof tensor.dispose === 'function') tensor.dispose();
+        }
+    } else {
+        if (liveStats.mode !== 'leaves') {
+            liveSquareTrack = createLiveTrack('square');
+            liveLeafTracks = [];
+        }
+        liveStats.mode = 'leaves';
+        const active = matchLiveLeafTracks(detections, detector);
+        for (const track of active) {
+            const cropStarted = performance.now();
+            const tensor = await liveLeafTensor(square, track.box, detector.cropPadding);
+            preprocessMs += performance.now() - cropStarted;
+            if (!tensor) continue;
+            try {
+                if (!isCurrent()) return null;
+                track.status = await assessLiveTrack(runtime, track, tensor, isCurrent);
+                if (!track.status) return null;
+            } finally {
+                if (typeof tensor.dispose === 'function') tensor.dispose();
+            }
+        }
+        showLiveLeaves(active);
+    }
+    recordDetectorTime(detectorMs);
+    recordLiveFrame(performance.now() - started, preprocessMs);
+    return performance.now() - started;
 }
 
 async function captureCameraFrame() {
@@ -1197,6 +1526,41 @@ function normalizeConditionSpecialists(value, schemaVersion, cropViewClasses) {
     }));
 }
 
+// Optional leaf finder entry. It only says where to look; every score and
+// threshold that decides a result still comes from the classifiers above.
+function normalizeLeafDetector(value) {
+    if (value === undefined) return null;
+    const path = 'leaf_detector';
+    if (!isPlainObject(value)) {
+        throw new VisionError('metadata', `Model metadata field ${path} must be an object.`);
+    }
+    const inputSize = value.input_size;
+    if (!Number.isInteger(inputSize) || inputSize < 64 || inputSize > 1024 || inputSize % 32 !== 0) {
+        throw new VisionError('metadata', `Model metadata field ${path}.input_size must be a multiple of 32.`);
+    }
+    if (!Array.isArray(value.classes) || value.classes.length === 0) {
+        throw new VisionError('metadata', `Model metadata field ${path}.classes must list the box classes.`);
+    }
+    const maxLeaves = value.max_leaves;
+    if (!Number.isInteger(maxLeaves) || maxLeaves < 1 || maxLeaves > 6) {
+        throw new VisionError('metadata', `Model metadata field ${path}.max_leaves must be 1 to 6.`);
+    }
+    const cropPadding = value.crop_padding;
+    if (!Number.isFinite(cropPadding) || cropPadding < 1 || cropPadding > 2) {
+        throw new VisionError('metadata', `Model metadata field ${path}.crop_padding must be between 1 and 2.`);
+    }
+    return Object.freeze({
+        inputSize,
+        classes: Object.freeze(value.classes.map((label, index) => requireText(label, `${path}.classes[${index}]`))),
+        scoreThreshold: requireThreshold(value.score_threshold, `${path}.score_threshold`),
+        minBoxSide: requireThreshold(value.min_box_side, `${path}.min_box_side`),
+        wholeSquareSide: requireThreshold(value.whole_square_side, `${path}.whole_square_side`),
+        maxLeaves,
+        cropPadding,
+        onnxSha256: requireSha256(value.onnx_sha256, `${path}.onnx_sha256`),
+    });
+}
+
 function validateMetadata(payload) {
     if (!isPlainObject(payload) || payload.schema_version === undefined) {
         throw new VisionError('metadata', 'Model metadata is missing its schema version.');
@@ -1247,6 +1611,8 @@ function validateMetadata(payload) {
         cropOnnxSha256: requireSha256(payload.crop_view.onnx_sha256, 'crop_view.onnx_sha256', true),
         diseaseOnnxSha256: requireSha256(payload.disease.onnx_sha256, 'disease.onnx_sha256', true),
         conditionSpecialists: normalizeConditionSpecialists(payload.condition_specialists, schemaVersion, cropViewClasses),
+        // Read only behind the flag, so the default page never depends on it.
+        leafDetector: LEAF_FINDER_REQUESTED ? normalizeLeafDetector(payload.leaf_detector) : null,
     });
 }
 
@@ -1368,12 +1734,36 @@ async function createRuntime() {
     const cropViewSession = await queueOnnxOperation(() => ort.InferenceSession.create(cropViewBytes, sessionOptions));
     const diseaseSession = await queueOnnxOperation(() => ort.InferenceSession.create(diseaseBytes, sessionOptions));
 
+    // The leaf finder is optional: when it is missing or fails its check, live
+    // mode keeps analysing the whole square.
+    let leafDetector = null;
+    let leafFinderNote = '';
+    if (metadata.leafDetector) {
+        try {
+            const bytes = await fetchProtectedModel(
+                LEAF_FINDER_ENDPOINT,
+                'The leaf finder model',
+                metadata.leafDetector.onnxSha256
+            );
+            const session = await queueOnnxOperation(() => ort.InferenceSession.create(bytes, sessionOptions));
+            leafDetector = Object.freeze({ ...metadata.leafDetector, session });
+            leafFinderNote = ' · leaf finder on';
+        } catch {
+            leafFinderNote = ' · leaf finder unavailable';
+        }
+    } else if (LEAF_FINDER_REQUESTED) {
+        leafFinderNote = ' · leaf finder not installed';
+    }
+    if (leafDetector && elements.cameraGuideCopy) {
+        elements.cameraGuideCopy.textContent = 'Each leaf or fruit inside this square is found and checked';
+    }
+
     setModelState(
         'ready',
-        `${metadata.cropViewClasses.length} crop views · ${routedConditionCount(metadata)} conditions`
+        `${metadata.cropViewClasses.length} crop views · ${routedConditionCount(metadata)} conditions${leafFinderNote}`
     );
 
-    return Object.freeze({ metadata, cropViewSession, diseaseSession });
+    return Object.freeze({ metadata, cropViewSession, diseaseSession, leafDetector });
 }
 
 function conditionSpecialistForFamily(runtime, family) {
@@ -2166,7 +2556,7 @@ async function assessConditionRoute(
     runtime,
     identity,
     input,
-    { live = false, isCurrent = () => true } = {}
+    { live = false, isCurrent = () => true, smooth = null } = {}
 ) {
     const { crop, organ } = identity;
     const family = `${crop}_${organ}`;
@@ -2183,13 +2573,10 @@ async function assessConditionRoute(
             live ? 'The live condition model' : 'The disease model'
         );
         if (!isCurrent()) return null;
-        const routedProbabilities = live
-            ? smoothLiveConditionProbabilities(
-                probabilities,
-                family,
-                route.id,
-                model.id
-            )
+        // A live track averages scores over frames; the safeguards below then
+        // run on the averaged scores with unchanged thresholds.
+        const routedProbabilities = smooth
+            ? smooth(probabilities, route.id, model.id)
             : probabilities;
         const conditionMatch = sameCropOrganConditions(
             routedProbabilities,
@@ -2890,7 +3277,10 @@ window.CropScoutVision = Object.freeze({
     liveStats: () => ({
         ...liveStats,
         display: { ...liveStats.display },
-        shownVerdict: liveShownVerdict?.key || '',
+        leaves: liveStats.leaves.map((leaf) => ({ ...leaf, box: [...leaf.box] })),
+        shownVerdict: liveStats.mode === 'leaves'
+            ? (liveStats.leaves.find((leaf) => leaf.shown)?.shown || '')
+            : (liveSquareTrack.shown?.key || ''),
     }),
     setModelState,
     startRuntime,

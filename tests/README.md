@@ -40,6 +40,8 @@ Each fixture has exactly one source:
 - `"dir"`: a folder; the first image by sorted file name is used
 - `"synthetic"`: `"noise"` or `"grey"`, a frame with no crop in it
 
+Add `"scene": "plant"` to a fixture that shows a busy scene with several leaves (a whole plant or a canopy). Photo mode is not the reference for those, because one leaf no longer fills the square, so they are left out of the agreement count and reported in the **Leaf finder** table instead: how often the frame was split into leaves, how many were found, and what each one showed.
+
 ## Run
 
 ```sh
@@ -48,6 +50,7 @@ node live-e2e.mjs                                   # all fixtures, against this
 node live-e2e.mjs --only tomato-leaf-septoria       # one fixture (substring of the id; comma-separate several)
 node live-e2e.mjs --only user-,no-crop              # a group
 node live-e2e.mjs --root <dir> --report .out/reference.md   # reference run against another copy of the site
+node live-e2e.mjs --query detector=1                # with the leaf finder on (/vision/?detector=1)
 node live-e2e.mjs --list                            # show resolved fixtures
 node live-e2e.mjs --help                            # all options
 ```

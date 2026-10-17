@@ -335,6 +335,7 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
 
         <div class="camera-view" id="camera-view">
             <video id="camera-video" autoplay muted playsinline></video>
+            <div class="live-leaf-boxes" id="live-leaf-boxes" hidden aria-hidden="true"></div>
             <aside class="live-recognition is-loading" id="live-recognition">
                 <span class="live-recognition-dot" aria-hidden="true"></span>
                 <span>

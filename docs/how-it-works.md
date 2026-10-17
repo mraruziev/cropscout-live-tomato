@@ -23,6 +23,8 @@ vote: show a verdict when 3 of the last 4 frames agree · hold it while 2 of 4 s
 live label on the camera view · "Freeze" → full photo report with the AI evidence map
 ```
 
+With the optional **leaf finder** (`/vision/?detector=1`), a YOLO26n detector first looks for tomato leaves and fruit in the square. When several smaller leaves are found, each one is cut out and runs through the same steps as its own track, with its own smoothing and votes. When one leaf fills the square, or nothing is found, the square is analysed as above. Details: [leaf-finder.md](leaf-finder.md).
+
 ## Models
 
 | Model | Architecture | Input | Output | Size |
@@ -31,6 +33,7 @@ live label on the camera view · "Freeze" → full photo report with the AI evid
 | General condition | YOLO26n classifier | same | 46 class scores | 6 MB |
 | Cucumber-leaf specialist | YOLO26s classifier | same | 54 class scores | 22 MB |
 | Lemon-leaf specialist | YOLO26s classifier | same | 20 class scores | 22 MB |
+| Leaf finder (optional) | YOLO26n detector | 1×3×320×320, RGB, 0–1 | 1×300×6 boxes: x1, y1, x2, y2, score, class (no NMS step) | 10 MB |
 
 - The models were trained with Ultralytics and exported to ONNX.
 - They run with onnxruntime-web (WebAssembly, 1 thread), so the same code works on iPhone and Android.
@@ -46,6 +49,7 @@ live label on the camera view · "Freeze" → full photo report with the AI evid
   - A verdict appears after 3 of the last 4 frames pass every safeguard with the same answer.
   - It is withdrawn once fewer than 2 do.
   - It is cleared at once if the crop is lost or changes.
+- **With the leaf finder, all of this runs per leaf.** Each leaf has its own smoothing and votes. A frame where the finder misses a leaf counts as a failed frame for that leaf (it can withdraw a verdict, never confirm one), and the finder never changes a score or a threshold.
 - **Field notes never change a result**, and nothing retrains automatically.
 
 ## Why halving
@@ -74,6 +78,7 @@ live label on the camera view · "Freeze" → full photo report with the AI evid
 | `vision/feedback.php`, `vision/lib/feedback.php` | Saves field notes (SQLite) |
 | `vision/private/model-metadata.json` | Class lists, thresholds, model hashes, advice text |
 | `vision/private/dataset-provenance.json` | Datasets and licences behind each model |
+| `tools/detector/` | Build the leaf finder's box dataset, train it and export it ([leaf-finder.md](leaf-finder.md)) |
 | `vision/vendor/` | onnxruntime-web (WebAssembly build) |
 
 ## Test hook
@@ -83,5 +88,6 @@ live label on the camera view · "Freeze" → full photo report with the AI evid
 - average milliseconds per frame
 - the label currently shown
 - the verdict being held
+- with the leaf finder: `mode` (`square` or `leaves`), average detector milliseconds, and each leaf's box, state and shown verdict
 
 The end-to-end tests in `tests/` use it, and it also works for checks on a real phone.

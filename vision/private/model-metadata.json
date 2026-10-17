@@ -2104,5 +2104,21 @@
       "routing_policy_id": "lemon_disease_only_preserve_base_healthy_v1",
       "specialist_min_confidence": 0.7
     }
-  ]
+  ],
+  "leaf_detector": {
+    "architecture": "YOLO26n detector, end-to-end output (no NMS step)",
+    "input_size": 320,
+    "input": "centre square, RGB CHW, 0-1",
+    "output": "1 x N x 6: x1, y1, x2, y2 (input pixels), score, class",
+    "classes": [
+      "tomato_leaf",
+      "tomato_fruit"
+    ],
+    "score_threshold": 0.35,
+    "min_box_side": 0.15,
+    "whole_square_side": 0.6,
+    "max_leaves": 3,
+    "crop_padding": 1.15,
+    "onnx_sha256": "dd30614bb4002294dec5fb7709e7e7f6a7acfa2619ce8bc7538729903e6cf16d"
+  }
 }

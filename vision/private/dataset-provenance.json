@@ -160,6 +160,32 @@
     "lemon_roboflow_v4": "MIT",
     "lemon_smz8ffbthy": "CC BY 4.0"
    }
+  },
+  "leaf_detector": {
+   "classes": 2,
+   "images": 4641,
+   "boxes": {
+    "tomato_fruit": 877,
+    "tomato_leaf": 70117
+   },
+   "split_counts": {
+    "train": 3682,
+    "val": 620,
+    "test": 339
+   },
+   "split_rule": "by source photo (SLIF base photo ID, TFDD photo number, PlantDoc file) or capture day (Sichuan); near-duplicate photos found by perceptual hash share a split",
+   "images_per_source": {
+    "plantdoc": 738,
+    "sichuan_greenhouse": 551,
+    "slif_tomato": 2670,
+    "tfdd": 682
+   },
+   "source_licenses": {
+    "plantdoc": "CC BY 4.0",
+    "sichuan_greenhouse": "CC BY 4.0",
+    "slif_tomato": "CC BY 4.0",
+    "tfdd": "CC BY 4.0"
+   }
   }
  },
  "sources": {
@@ -243,6 +269,21 @@
    "title": "PlantVillage (official release)",
    "license": "CC BY-SA 3.0",
    "url": "https://github.com/spMohanty/PlantVillage-Dataset"
+  },
+  "sichuan_greenhouse": {
+   "title": "Tomato Disease Dataset (Sichuan greenhouse, Liu et al. 2025)",
+   "license": "CC BY 4.0",
+   "url": "https://data.mendeley.com/datasets/c2x8rynybg/1"
+  },
+  "slif_tomato": {
+   "title": "SLIF-Tomato: Sri Lankan In-Field Tomato Dataset (George et al. 2026)",
+   "license": "CC BY 4.0",
+   "url": "https://www.kaggle.com/datasets/romiyalgeorge/slif-tomato-dataset"
+  },
+  "tfdd": {
+   "title": "TFDD: Tomato Fruit Disease Detection dataset v3",
+   "license": "CC BY 4.0",
+   "url": "https://data.mendeley.com/datasets/ktfnhjspjn/3"
   },
   "tomato_leaf": {
    "title": "Tomato Leaf Dataset: multiclass disease detection and classification",

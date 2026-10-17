@@ -43,6 +43,12 @@ $models = [
         'download_name' => 'cropscout-lemon-leaf.onnx',
         'content_type' => 'application/octet-stream',
     ],
+    // Optional leaf finder, used only when the page is opened with ?detector=1.
+    'leaf-detector' => [
+        'path' => __DIR__ . '/private/cropscout-leaf-detector.onnx',
+        'download_name' => 'cropscout-leaf-detector.onnx',
+        'content_type' => 'application/octet-stream',
+    ],
 ];
 
 $requested = isset($_GET['model']) && is_string($_GET['model']) ? $_GET['model'] : '';
