@@ -23,3 +23,9 @@ live/snapshots/
 live/demo.log
 vision/private/model-metadata.local.json
 live/CropSCOUT Live.app/Contents/_CodeSignature/
+
+# Runtime data of the PHP backend: grower notes and photos never go into git
+vision/data/*
+!vision/data/.htaccess
+vision/private/feedback/*
+!vision/private/feedback/.htaccess

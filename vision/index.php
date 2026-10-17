@@ -19,6 +19,7 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
     <meta name="theme-color" content="#0b0e0c">
     <title>CropSCOUT Vision — camera AI subsystem</title>
     <link rel="canonical" href="https://crop-scout.com/vision/">
+    <link rel="icon" href="data:,">
     <link rel="stylesheet" href="styles.css?v=<?= rawurlencode($styleVersion) ?>">
     <script src="app.js?v=<?= rawurlencode($scriptVersion) ?>" type="module"></script>
 </head>

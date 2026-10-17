@@ -85,6 +85,9 @@ With the optional **leaf finder** (`/vision/?detector=1`), a YOLO26n detector fi
 | `tools/detector/` | Build the leaf finder's box dataset, train it and export it ([leaf-finder.md](leaf-finder.md)) |
 | `tools/classifier/` | Build the field leaf set, fine-tune the tomato-leaf and crop/type models, export them, score them on real photos ([field-classifier.md](field-classifier.md)) |
 | `vision/vendor/` | onnxruntime-web (WebAssembly build) |
+| `tools/build_static.py`, `tools/serve_static.py` | The PHP-free copy of the page in `dist/static/` (models as plain files, no field notes) and a local server for it |
+| `scripts/` | Fetch the models from the repo's `models` branch, link or install them, run the PHP server or build and serve the static copy (macOS/Linux and Windows) |
+| `.github/workflows/pages.yml` | Builds the static copy on every push to `main` and publishes it to GitHub Pages |
 
 ## Test hook
 

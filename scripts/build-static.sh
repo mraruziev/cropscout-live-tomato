@@ -10,5 +10,5 @@ args=()
 for a in "$@"; do
   if [ "$a" = "--serve" ]; then serve=1; else args+=("$a"); fi
 done
-"$PY" -I tools/build_static.py "${args[@]}" || true
+"$PY" -I tools/build_static.py ${args[@]+"${args[@]}"} || true  # bash 3.2 (macOS) with set -u
 if [ "$serve" = 1 ]; then exec "$PY" -I tools/serve_static.py; fi

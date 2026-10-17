@@ -66,8 +66,6 @@ The 890 raw files are not 890 independent scenes. Filenames collapse to 613 base
 
 9) Minor: the dataset went up on Kaggle in December 2025 and has about 3,400 downloads, so "new" is relative. Usability 0.6875 (6.88) and "uncited" (0 citations) are correct.
 
-Process note: WebFetch cached the open-access paper PDF and the Kaggle card image under ~/.claude/projects/.../tool-results automatically. I wrote nothing else outside the scratchpad and touched nothing under the CropSCOUT work folder.
-
 ### First claim
 
 - Why relevant: This is the closest public match to what a phone camera sees in a field: whole plants with several leaves, phone sensors, varied light and time of day, boxes per diseased region, and labels checked by plant pathologists. It also adds Powdery Mildew and Wilt, which CropSCOUT does not have.
@@ -228,7 +226,6 @@ Process note: WebFetch cached the open-access paper PDF and the Kaggle card imag
 4) "Leaf blight merges early and late blight" has no support. The authors never define "leaf blight", so the right wording is "unspecified blight (could be early, late, or both)".
 5) The Ghana/Kenya "conflict" mostly has an explanation. The Data in Brief specifications table lists two data source locations: UENR in Sunyani, Ghana, and the African Technology Policy Studies Network in Nairobi, Kenya, which is the funder (grant AI4AFS/GR/AFS-1233809296). The 2025 STA-Net paper (arXiv 2509.03754) probably took "Ghana and Kenya" from that table. Nothing shows images were collected in Kenya.
 6) Minor: the folder is spelled "verticulium wilt", and the paper says the experts were virologists and pathologists. There is also a camera/resolution inconsistency (a DSLR is named, but phone-size originals are listed), which hints at more than one source device.
-Process note: the PMC figure page wrote to the user's clipboard when I clicked it in the browser pane (the app already warned the user).
 
 ### First claim
 

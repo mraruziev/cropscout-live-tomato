@@ -7,8 +7,8 @@ Farmers shouldn't need to take a photo, upload it and wait. CropSCOUT Live runs 
 ## Demo
 
 ```bash
-scripts/link-models.sh /path/to/onnx/models   # puts the model files into vision/private/
-scripts/serve.sh                               # http://localhost:8080/vision/
+scripts/fetch-models.sh                        # installs the models from the repo's "models" branch into vision/private/
+scripts/serve.sh                               # http://localhost:8080/vision/ (needs PHP 8: brew install php, or apt install php-cli; or use the static build below)
 ```
 
 No access to the release models? The public ones work for tomato and cucumber:
@@ -20,10 +20,12 @@ scripts/link-public-models.sh                 # links them + writes a local meta
 scripts/serve.sh
 ```
 
+(`scripts/link-models.sh /path/to/onnx/models` links model files you already have instead.)
+
 On Windows (needs PHP 8 on PATH, e.g. `winget install PHP.PHP.8.4`, with `pdo_sqlite`, `sqlite3`, `gd`, `mbstring` and `zip` enabled in `php.ini`):
 
 ```bat
-scripts\install-models.cmd C:\path\to\onnx\models   REM copies the models and checks their SHA-256 against the metadata
+scripts\fetch-models.cmd                            REM installs the models from the repo's "models" branch (or install-models.cmd C:\path\to\onnx)
 scripts\serve.cmd                                   REM http://localhost:8080/vision/
 ```
 
@@ -45,7 +47,7 @@ scripts\build-static.cmd               # Windows: build (add --models C:\path\to
 scripts\serve-static.cmd               # Windows: serve http://localhost:8081/
 ```
 
-Any static host works for the result (the camera still needs HTTPS or localhost). Field notes and the team review page exist only in the PHP deployment.
+Any static host works for the result (the camera still needs HTTPS or localhost). Field notes and the team review page exist only in the PHP deployment. `.github/workflows/pages.yml` builds it on every push to `main` and publishes it to GitHub Pages (enable once under Settings → Pages → Source: GitHub Actions).
 
 ### Local Python demo (laptop webcam, no PHP)
 
@@ -148,6 +150,6 @@ We looked for public tomato datasets taken **in the field**, because a live came
 | `tools/benchmark/` | Model speed scripts |
 | `tools/detector/` | Leaf finder: fetch the box datasets, build, train, export, evaluate |
 | `tools/classifier/` | Field leaf classifier: fetch the field sets, cut leaves with the finder, fine-tune, export, score on real photos |
-| `scripts/` | Link the models and run a local server |
+| `scripts/` | Fetch, link or install the models; run the PHP server, or build and serve the PHP-free copy |
 
 *Screening support only. Confirm uncertain or severe symptoms with a local agronomist before treatment.*
