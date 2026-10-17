@@ -54,8 +54,9 @@ Details: [docs/how-it-works.md](docs/how-it-works.md) · [docs/leaf-finder.md](d
 | One live tomato frame | ~74 ms | ~220–370 ms |
 | Live updates | ~2.7 per second | ~1.3–2.2 per second |
 | First confirmed label | 1.0 s | ~1.5–2.5 s |
+| Leaf finder on, busy plant, 3 leaves checked | ~170 ms per frame | ~0.5–0.9 s per frame |
 
-On 22 test images shown to Chrome as a fake camera, the live label matched the photo-mode result on **22 of 22**, and it never flickered on a steady image.
+On 22 test images shown to Chrome as a fake camera, the live label matched the photo-mode result on **22 of 22**, with or without the leaf finder, and it never flickered on a steady image.
 
 Details and model-by-model numbers: [docs/benchmark.md](docs/benchmark.md)
 
@@ -67,9 +68,9 @@ Details and model-by-model numbers: [docs/benchmark.md](docs/benchmark.md)
 
 The models were trained on public datasets: PlantVillage, PlantDoc, the Tomato Leaf Dataset (Bangladesh), Fruits-360 and others. All of them are listed with licences in `vision/private/dataset-provenance.json`.
 
-## Datasets for the next step
+## Field datasets
 
-We looked for public tomato datasets taken **in the field**, because a live camera sees real plants, not leaves on a white table. Every claim was checked twice.
+We looked for public tomato datasets taken **in the field**, because a live camera sees real plants, not leaves on a white table. Every claim was checked twice. The leaf finder is trained on SLIF-Tomato, the Sichuan greenhouse set, PlantDoc and TFDD (tomato fruit), all CC BY 4.0; Tomato-Village is not used.
 
 | Dataset | What it has | Photos | Commercial use | Fit for live camera |
 |---|---|---|---|---|
@@ -86,8 +87,10 @@ We looked for public tomato datasets taken **in the field**, because a live came
 
 - [x] Live camera screening in the browser, with safeguards and frame voting
 - [x] Fake-camera end-to-end tests
-- [ ] Test on real phones (iPhone Safari, Android Chrome) and real field videos
-- [ ] Find each leaf first: a small YOLO26n leaf/fruit detector at 320 px, then classify each leaf crop with the same safeguards
+- [x] Find each leaf first: a YOLO26n leaf/fruit detector at 320 px, then classify each leaf crop with the same safeguards (behind `?detector=1`; [results](docs/leaf-finder.md#results))
+- [ ] Retrain the condition model on field leaf crops cut out by the leaf finder (CCMT, Daffodil, Netrokona, Taiwan sets), with the whole-plant scenes as a gate, then turn the finder on by default
+- [ ] Test on real phones (iPhone Safari, Android Chrome) and real field videos; use our own farm videos to raise the finder's recall on big leaves
+- [ ] Freeze report for the leaf being shown, not the whole square
 - [ ] Tomato fruit diseases (anthracnose, blossom-end rot, cracking, late blight)
 - [ ] WebGPU on Android Chrome, keeping WebAssembly as the fallback
 

@@ -2119,6 +2119,6 @@
     "whole_square_side": 0.6,
     "max_leaves": 3,
     "crop_padding": 1.15,
-    "onnx_sha256": "dd30614bb4002294dec5fb7709e7e7f6a7acfa2619ce8bc7538729903e6cf16d"
+    "onnx_sha256": "2aa87d934aca2e3f0fa0bb456c00797c4ed00379212d3166708d0ea9e3dc14ef"
   }
 }

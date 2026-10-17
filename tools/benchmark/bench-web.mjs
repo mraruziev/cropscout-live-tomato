@@ -9,9 +9,12 @@ const files = fs.readdirSync(modelDir).filter(f => f.endsWith('.onnx')).sort();
 for (const f of files) {
   const bytes = fs.readFileSync(path.join(modelDir, f));
   const s = await ort.InferenceSession.create(bytes, { executionProviders: ['wasm'], graphOptimizationLevel: 'all' });
-  const n = 3 * 224 * 224;
+  // Static input shape from the model (classifiers 224 px, leaf finder 320 px).
+  const declared = s.inputMetadata?.[0]?.shape;
+  const shape = Array.isArray(declared) && declared.every(Number.isInteger) ? declared : [1, 3, 224, 224];
+  const n = shape.reduce((a, b) => a * b, 1);
   const data = new Float32Array(n); for (let i = 0; i < n; i++) data[i] = Math.random();
-  const t = new ort.Tensor('float32', data, [1, 3, 224, 224]);
+  const t = new ort.Tensor('float32', data, shape);
   const feeds = { [s.inputNames[0]]: t };
   for (let i = 0; i < 5; i++) await s.run(feeds);
   const ts = [];

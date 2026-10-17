@@ -42,7 +42,7 @@ const LEAF_FINDER_ENDPOINT = 'model.php?model=leaf-detector';
 const LEAF_FINDER_REQUESTED = new URLSearchParams(window.location.search).get('detector') === '1';
 // A detected leaf keeps its track while its box overlaps last frame's box by
 // at least this much, and loses it after this many frames in a row unseen.
-const LIVE_TRACK_MIN_IOU = 0.3;
+const LIVE_TRACK_MIN_IOU = 0.5;
 const LIVE_TRACK_MAX_MISSES = 2;
 const LIVE_DUPLICATE_IOU = 0.7;
 const MAX_FILE_BYTES = 15 * 1024 * 1024;
@@ -188,6 +188,8 @@ let preferredCameraFacing = 'environment';
 let liveSquareTrack = createLiveTrack('square');
 let liveLeafTracks = [];
 let liveNextTrackId = 1;
+let liveSquareStreak = 0;
+let leafFinderFailed = false;
 let liveLoopGeneration = 0;
 let lastLiveAnnouncement = '';
 const liveStats = {
@@ -496,6 +498,7 @@ function voteLiveVerdict(track, key, text) {
 function resetLiveRecognition() {
     liveSquareTrack = createLiveTrack('square');
     liveLeafTracks = [];
+    liveSquareStreak = 0;
     renderLiveLeafBoxes([]);
     Object.assign(liveStats, { mode: 'square', leaves: [] });
     lastLiveAnnouncement = '';
@@ -710,9 +713,9 @@ async function requestCamera({ deviceId = '', facingMode = preferredCameraFacing
     }).catch(() => {});
 }
 
-// Draws a square region of the video, halved 2:1 by the browser while it stays
-// at least twice the model size, and returns its pixels.
-function sampleVideoSquare(left, top, side) {
+// Draws a square region of the video (or of a snapshot canvas), halved 2:1 by
+// the browser while it stays at least twice the model size, and returns its pixels.
+function sampleSquare(source, left, top, side) {
     const steps = [side];
     while (steps.at(-1) / 2 >= LIVE_MIN_SAMPLE_SIDE) steps.push(Math.round(steps.at(-1) / 2));
     const canvas = document.createElement('canvas');
@@ -723,7 +726,7 @@ function sampleVideoSquare(left, top, side) {
     context.imageSmoothingEnabled = true;
     context.imageSmoothingQuality = 'high';
     context.drawImage(
-        elements.cameraVideo,
+        source,
         left,
         top,
         side,
@@ -753,8 +756,31 @@ function liveSquareSample() {
     const sourceSide = Math.min(videoWidth, videoHeight);
     const sourceX = (videoWidth - sourceSide) / 2;
     const sourceY = (videoHeight - sourceSide) / 2;
-    const sample = sampleVideoSquare(sourceX, sourceY, sourceSide);
+    const sample = sampleSquare(elements.cameraVideo, sourceX, sourceY, sourceSide);
     return sample && { ...sample, sourceX, sourceY, sourceSide };
+}
+
+// The leaf finder keeps a full-resolution copy of the centre square, taken in
+// the same instant as the detector's input, so every leaf is cut from the frame
+// its box was found in, however long the other leaves take.
+function snapshotLiveSquare(square) {
+    const canvas = document.createElement('canvas');
+    canvas.width = square.sourceSide;
+    canvas.height = square.sourceSide;
+    const context = canvas.getContext('2d');
+    if (!context) return null;
+    context.drawImage(
+        elements.cameraVideo,
+        square.sourceX,
+        square.sourceY,
+        square.sourceSide,
+        square.sourceSide,
+        0,
+        0,
+        square.sourceSide,
+        square.sourceSide
+    );
+    return canvas;
 }
 
 // Antialiased resize to the model size (same as photo mode), as an RGB CHW tensor.
@@ -783,22 +809,20 @@ async function liveVideoTensor(square = liveSquareSample()) {
 }
 
 // One detected leaf or fruit: a square around its box, cut from the
-// full-resolution video inside the centre square, so a small leaf keeps its
+// full-resolution snapshot of the centre square, so a small leaf keeps its
 // detail. It goes through the same 2:1 halving and resize as the whole square.
-async function liveLeafTensor(square, box, padding) {
+async function liveLeafTensor(snapshot, box, padding) {
+    const squareSide = snapshot.width;
     const [x1, y1, x2, y2] = box;
-    const fraction = Math.min(1, Math.max(x2 - x1, y2 - y1) * padding);
-    const side = Math.max(2, Math.min(
-        Math.round((fraction * square.sourceSide) / 2) * 2,
-        square.sourceSide - (square.sourceSide % 2)
-    ));
-    const clamp = (value, origin) => Math.min(
-        Math.max(Math.round(value), origin),
-        origin + square.sourceSide - side
-    );
-    const left = clamp(square.sourceX + (((x1 + x2) / 2) * square.sourceSide) - (side / 2), square.sourceX);
-    const top = clamp(square.sourceY + (((y1 + y2) / 2) * square.sourceSide) - (side / 2), square.sourceY);
-    const sample = sampleVideoSquare(left, top, side);
+    const wanted = Math.max(1, Math.min(1, Math.max(x2 - x1, y2 - y1) * padding) * squareSide);
+    // Each 2:1 step must be exact, so the side is a multiple of 2 per step.
+    let unit = 1;
+    while (wanted / (unit * 2) >= LIVE_MIN_SAMPLE_SIDE) unit *= 2;
+    const side = Math.max(unit, Math.min(Math.round(wanted / unit), Math.floor(squareSide / unit)) * unit);
+    const clamp = (value) => Math.min(Math.max(Math.round(value), 0), squareSide - side);
+    const left = clamp((((x1 + x2) / 2) * squareSide) - (side / 2));
+    const top = clamp((((y1 + y2) / 2) * squareSide) - (side / 2));
+    const sample = sampleSquare(snapshot, left, top, side);
     if (!sample) return null;
     return squareTensor(sample.rgba, sample.side, IMAGE_SIZE);
 }
@@ -1040,7 +1064,7 @@ async function analyseLiveFrame(runtime, generation) {
     const started = performance.now();
     let tensor = null;
     try {
-        if (runtime.leafDetector) return await analyseLiveLeaves(runtime, isCurrent, started);
+        if (runtime.leafDetector && !leafFinderFailed) return await analyseLiveLeaves(runtime, isCurrent, started);
 
         tensor = await liveVideoTensor();
         const preprocessMs = performance.now() - started;
@@ -1056,6 +1080,8 @@ async function analyseLiveFrame(runtime, generation) {
         if (!isCurrent()) return null;
         resetLiveConditionTracking(liveSquareTrack);
         liveLeafTracks.forEach((track) => resetLiveConditionTracking(track));
+        renderLiveLeafBoxes([]);
+        liveStats.leaves = [];
         if (error instanceof VisionError && error.code === 'specialist') {
             setLiveRecognition('error', 'Live condition model unavailable', error.message);
             announceLiveRecognition(error.message);
@@ -1084,7 +1110,11 @@ async function analyseLiveFrame(runtime, generation) {
  *     finder misses the leaf counts like a frame that failed a safeguard: an
  *     empty vote, which can withdraw a verdict but never confirm one. Two
  *     misses in a row end the track. Switching between the whole square and
- *     separate leaves starts every track from scratch.
+ *     separate leaves starts every track from scratch; going back to the whole
+ *     square needs two frames in a row.
+ *   - Every leaf is cut from a full-resolution copy of the square taken with
+ *     the detector's input, so a slow frame never mixes two video frames.
+ *   - A finder that fails is switched off and the whole square is analysed.
  *   - The finder only decides where to look. It never changes a score or a
  *     threshold.
  */
@@ -1108,10 +1138,11 @@ async function runLeafDetector(detector, input) {
     const outputName = detector.session.outputNames[0];
     const outputs = await queueOnnxOperation(() => detector.session.run({ [inputName]: input }));
     const output = outputs[outputName];
-    if (!output || output.dims.length !== 3 || output.dims[0] !== 1 || output.dims[2] !== 6) {
-        throw new VisionError('model', 'The leaf finder returned an unexpected output.');
-    }
+    if (!output) throw new VisionError('model', 'The leaf finder returned no output.');
     try {
+        if (output.dims.length !== 3 || output.dims[0] !== 1 || output.dims[2] !== 6) {
+            throw new VisionError('model', 'The leaf finder returned an unexpected output.');
+        }
         const data = output.data;
         const size = detector.inputSize;
         const clamp = (value) => Math.min(1, Math.max(0, value / size));
@@ -1243,69 +1274,105 @@ function recordDetectorTime(detectorMs) {
         : (liveStats.avgDetectorMs * 0.8) + (detectorMs * 0.2);
 }
 
+async function findLeaves(detector, square) {
+    const input = await squareTensor(square.rgba, square.side, detector.inputSize);
+    try {
+        return await runLeafDetector(detector, input);
+    } finally {
+        if (typeof input.dispose === 'function') input.dispose();
+    }
+}
+
+// A leaf finder that fails (a model that does not fit its metadata, say) is
+// switched off for this page, and live mode goes on with the whole square.
+function disableLeafFinder() {
+    leafFinderFailed = true;
+    if (elements.cameraGuideCopy) elements.cameraGuideCopy.textContent = 'Everything inside this square will be analyzed';
+    setModelState('ready', `${elements.modelStateText.textContent.replace(/ · leaf finder.*$/, '')} · leaf finder unavailable`);
+}
+
 async function analyseLiveLeaves(runtime, isCurrent, started) {
     const detector = runtime.leafDetector;
     const square = liveSquareSample();
-    if (!isCurrent()) return null;
-    if (!square) return 0;
-
-    const detectorStarted = performance.now();
-    const detectorInput = await squareTensor(square.rgba, square.side, detector.inputSize);
-    let detections;
+    // Taken in the same task as the detector's input, so from the same video frame.
+    const snapshot = square && snapshotLiveSquare(square);
     try {
-        detections = await runLeafDetector(detector, detectorInput);
-    } finally {
-        if (typeof detectorInput.dispose === 'function') detectorInput.dispose();
-    }
-    if (!isCurrent()) return null;
-    const detectorMs = performance.now() - detectorStarted;
-    const largest = detections.reduce((best, detection) => Math.max(best, boxSide(detection.box)), 0);
-    let preprocessMs = detectorStarted - started;
+        if (!isCurrent()) return null;
+        if (!square || !snapshot) return 0;
 
-    if (detections.length === 0 || largest >= detector.wholeSquareSide) {
-        if (liveStats.mode !== 'square') {
-            liveSquareTrack = createLiveTrack('square');
-            liveLeafTracks = [];
-            renderLiveLeafBoxes([]);
-            liveStats.leaves = [];
-        }
-        liveStats.mode = 'square';
-        const resizeStarted = performance.now();
-        const tensor = await squareTensor(square.rgba, square.side, IMAGE_SIZE);
-        preprocessMs += performance.now() - resizeStarted;
+        const detectorStarted = performance.now();
+        let detections;
         try {
+            detections = await findLeaves(detector, square);
+        } catch {
             if (!isCurrent()) return null;
-            const status = await assessLiveTrack(runtime, liveSquareTrack, tensor, isCurrent, showLiveStatus);
-            if (!status) return null;
-            showLiveStatus(status);
-        } finally {
-            if (typeof tensor.dispose === 'function') tensor.dispose();
+            disableLeafFinder();
+            detections = [];
         }
-    } else {
-        if (liveStats.mode !== 'leaves') {
-            liveSquareTrack = createLiveTrack('square');
-            liveLeafTracks = [];
-        }
-        liveStats.mode = 'leaves';
-        const active = matchLiveLeafTracks(detections, detector);
-        for (const track of active) {
-            const cropStarted = performance.now();
-            const tensor = await liveLeafTensor(square, track.box, detector.cropPadding);
-            preprocessMs += performance.now() - cropStarted;
-            if (!tensor) continue;
+        if (!isCurrent()) return null;
+        const detectorMs = performance.now() - detectorStarted;
+        const largest = detections.reduce((best, detection) => Math.max(best, boxSide(detection.box)), 0);
+        const wantsSquare = detections.length === 0 || largest >= detector.wholeSquareSide;
+        // Splitting into leaves takes one frame. Going back to the whole square
+        // takes LIVE_TRACK_MAX_MISSES frames in a row, as ending a leaf track does.
+        liveSquareStreak = wantsSquare && liveStats.mode === 'leaves' ? liveSquareStreak + 1 : 0;
+        const useSquare = wantsSquare
+            && (liveStats.mode !== 'leaves' || liveSquareStreak >= LIVE_TRACK_MAX_MISSES || leafFinderFailed);
+        let preprocessMs = detectorStarted - started;
+
+        if (useSquare) {
+            if (liveStats.mode !== 'square') {
+                liveSquareTrack = createLiveTrack('square');
+                liveLeafTracks = [];
+                liveSquareStreak = 0;
+                renderLiveLeafBoxes([]);
+                liveStats.leaves = [];
+            }
+            liveStats.mode = 'square';
+            const resizeStarted = performance.now();
+            const tensor = await squareTensor(square.rgba, square.side, IMAGE_SIZE);
+            preprocessMs += performance.now() - resizeStarted;
             try {
                 if (!isCurrent()) return null;
-                track.status = await assessLiveTrack(runtime, track, tensor, isCurrent);
-                if (!track.status) return null;
+                const status = await assessLiveTrack(runtime, liveSquareTrack, tensor, isCurrent, showLiveStatus);
+                if (!status) return null;
+                showLiveStatus(status);
             } finally {
                 if (typeof tensor.dispose === 'function') tensor.dispose();
             }
+        } else {
+            if (liveStats.mode !== 'leaves') {
+                liveSquareTrack = createLiveTrack('square');
+                liveLeafTracks = [];
+            }
+            liveStats.mode = 'leaves';
+            const active = matchLiveLeafTracks(detections, detector);
+            for (const track of active) {
+                const cropStarted = performance.now();
+                const tensor = await liveLeafTensor(snapshot, track.box, detector.cropPadding);
+                preprocessMs += performance.now() - cropStarted;
+                if (!tensor) continue;
+                try {
+                    if (!isCurrent()) return null;
+                    track.status = await assessLiveTrack(runtime, track, tensor, isCurrent);
+                    if (!track.status) return null;
+                } finally {
+                    if (typeof tensor.dispose === 'function') tensor.dispose();
+                }
+            }
+            // Leaves missed this frame stay on screen until their track ends;
+            // their empty vote has already been counted.
+            showLiveLeaves(liveLeafTracks);
         }
-        showLiveLeaves(active);
+        recordDetectorTime(detectorMs);
+        recordLiveFrame(performance.now() - started, preprocessMs);
+        return performance.now() - started;
+    } finally {
+        if (snapshot) {
+            snapshot.width = 1;
+            snapshot.height = 1;
+        }
     }
-    recordDetectorTime(detectorMs);
-    recordLiveFrame(performance.now() - started, preprocessMs);
-    return performance.now() - started;
 }
 
 async function captureCameraFrame() {
@@ -1561,6 +1628,15 @@ function normalizeLeafDetector(value) {
     });
 }
 
+// A malformed leaf finder entry turns the finder off; it never stops the page.
+function optionalLeafDetector(value) {
+    try {
+        return normalizeLeafDetector(value);
+    } catch (error) {
+        return Object.freeze({ invalid: error instanceof Error ? error.message : 'invalid entry' });
+    }
+}
+
 function validateMetadata(payload) {
     if (!isPlainObject(payload) || payload.schema_version === undefined) {
         throw new VisionError('metadata', 'Model metadata is missing its schema version.');
@@ -1612,7 +1688,7 @@ function validateMetadata(payload) {
         diseaseOnnxSha256: requireSha256(payload.disease.onnx_sha256, 'disease.onnx_sha256', true),
         conditionSpecialists: normalizeConditionSpecialists(payload.condition_specialists, schemaVersion, cropViewClasses),
         // Read only behind the flag, so the default page never depends on it.
-        leafDetector: LEAF_FINDER_REQUESTED ? normalizeLeafDetector(payload.leaf_detector) : null,
+        leafDetector: LEAF_FINDER_REQUESTED ? optionalLeafDetector(payload.leaf_detector) : null,
     });
 }
 
@@ -1738,7 +1814,9 @@ async function createRuntime() {
     // mode keeps analysing the whole square.
     let leafDetector = null;
     let leafFinderNote = '';
-    if (metadata.leafDetector) {
+    if (metadata.leafDetector?.invalid) {
+        leafFinderNote = ' · leaf finder unavailable';
+    } else if (metadata.leafDetector) {
         try {
             const bytes = await fetchProtectedModel(
                 LEAF_FINDER_ENDPOINT,

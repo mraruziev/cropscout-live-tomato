@@ -59,6 +59,7 @@ def main(weights, dataset):
         rgb, x = square_input(path)
         rows = session.run(None, {session.get_inputs()[0].name: x})[0][0]
         rows = rows[rows[:, 4] >= LIVE["score_threshold"]]
+        rows[:, :4] = rows[:, :4].clip(0, IMGSZ)  # the page clamps boxes to the square, as Ultralytics does
         # nms=False selects the same NMS-free one-to-one head that was exported.
         ref = model.predict(cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR), imgsz=IMGSZ, conf=LIVE["score_threshold"],
                             nms=False, device="cpu", verbose=False)[0]

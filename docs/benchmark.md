@@ -48,9 +48,25 @@ Each number is the median of 50 runs after 5 warm-up runs, one 224×224 image at
 | General condition (YOLO26n) | 1.58 M | 6.3 ms | 2.4 ms | 14.6 ms |
 | Cucumber-leaf specialist (YOLO26s) | 5.50 M | 20.1 ms | 7.3 ms | 46.0 ms |
 | Lemon-leaf specialist (YOLO26s) | 5.46 M | 20.4 ms | 7.4 ms | 46.3 ms |
+| Leaf finder (YOLO26n detector, 320×320) | 2.39 M | 21.0 ms | 7.6 ms | 40.5 ms |
 
 - The page runs WebAssembly with 1 thread.
 - Browsers allow more threads only with cross-origin isolation headers, and threaded WebAssembly is unreliable on iPhone.
+
+## Leaf finder (`?detector=1`)
+
+Same fake-camera test with the leaf finder on. Full numbers, detector accuracy and the whole-plant scenes are in [leaf-finder.md](leaf-finder.md).
+
+| | Finder off | Finder on |
+|---|---|---|
+| Live result agrees with photo mode (22 close-ups) | 22 / 22 | **22 / 22** (21 analysed as the whole square, 1 split into fruits) |
+| Leaf finder per frame | — | ~55–60 ms (40 ms model + 540 → 320 px resize) |
+| Whole tomato frame, one leaf fills the square | 53–72 ms | ~101–122 ms |
+| Whole frame, 3 leaves checked separately | — | ~160–172 ms |
+| Time to first confirmed verdict | 1.0 s | 1.0–1.4 s |
+| Flicker on a steady image | 0 | 0 |
+
+The finder-off column is a run of the same code with the flag off; it gives exactly the verdicts of the run before the leaf finder was added.
 
 ## Phone estimate
 
@@ -60,13 +76,16 @@ A mid-range phone runs WebAssembly roughly 3–5× slower than the M2.
 |---|---|---|---|
 | Tomato | 220–370 ms | 440–740 ms | ~1.3–2.2 |
 | Lemon leaf | 350–580 ms | 700–1160 ms | ~0.9–1.4 |
+| Tomato, leaf finder on, one leaf fills the square | 330–550 ms | 660–1100 ms | ~0.9–1.5 |
+| Tomato, leaf finder on, 3 leaves | 510–860 ms | 1.0–1.7 s | ~0.6–1.0 |
 
-A verdict needs 3 agreeing frames, so the first confirmed tomato label should appear about 1.5–2.5 s after a leaf fills the square.
+A verdict needs 3 agreeing frames, so the first confirmed tomato label should appear about 1.5–2.5 s after a leaf fills the square (about 2–3.5 s with the leaf finder, 4–6 s per leaf on a busy plant).
 
 ## Rerun
 
 ```bash
 cd tests && PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install && node live-e2e.mjs
+node live-e2e.mjs --query detector=1 --screenshots    # with the leaf finder
 ```
 
 ```bash
