@@ -25,7 +25,11 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_ROOT = path.resolve(HERE, '..');
-const DEFAULT_PYTHON = path.resolve(HERE, '..', '.venv', 'bin', 'python');
+// The repo's .venv: bin/python on macOS and Linux, Scripts\python.exe on Windows.
+const DEFAULT_PYTHON = process.platform === 'win32'
+    ? path.resolve(HERE, '..', '.venv', 'Scripts', 'python.exe')
+    : path.resolve(HERE, '..', '.venv', 'bin', 'python');
+const FALLBACK_PYTHON = process.platform === 'win32' ? 'python' : 'python3';
 const MAKE_CLIP = path.join(HERE, 'make_fake_camera.py');
 const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp']);
 const HEALTHY_NAME = 'No covered disease pattern detected';
@@ -93,7 +97,7 @@ function parseArgs(argv) {
         out: path.join(HERE, '.out'),
         report: null,
         json: null,
-        python: process.env.CROPSCOUT_PYTHON || (fs.existsSync(DEFAULT_PYTHON) ? DEFAULT_PYTHON : 'python3'),
+        python: process.env.CROPSCOUT_PYTHON || (fs.existsSync(DEFAULT_PYTHON) ? DEFAULT_PYTHON : FALLBACK_PYTHON),
         calibrate: false,
     };
     const flags = new Set(['list', 'headed', 'keep-y4m', 'keep-server', 'calibrate', 'help', 'screenshots']);
