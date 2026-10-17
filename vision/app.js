@@ -76,6 +76,8 @@ const elements = {
     dropZone: document.querySelector('#drop-zone'),
     prompt: document.querySelector('#upload-prompt'),
     openCamera: document.querySelector('#open-camera-button'),
+    heroCamera: document.querySelector('#hero-camera-button'),
+    heroPhoto: document.querySelector('#hero-photo-button'),
     cameraAvailabilityNote: document.querySelector('#camera-availability-note'),
     cameraPanel: document.querySelector('#camera-panel'),
     cameraView: document.querySelector('#camera-view'),
@@ -108,6 +110,7 @@ const elements = {
     resultCorrectionButton: document.querySelector('#result-correction-button'),
     appHeader: document.querySelector('.app-header'),
     pageMain: document.querySelector('main'),
+    pageFooter: document.querySelector('.site-footer'),
     resultPanel: document.querySelector('.result-panel'),
     modelState: document.querySelector('#model-state'),
     modelStateText: document.querySelector('#model-state-text'),
@@ -249,7 +252,9 @@ function setCaptureActionsDisabled(disabled) {
         elements.reopenCameraButton,
         elements.input,
         elements.nativeInput,
-    ].forEach((control) => {
+        elements.heroCamera,
+        elements.heroPhoto,
+    ].filter(Boolean).forEach((control) => {
         control.disabled = disabled;
     });
     elements.dropZone.classList.toggle('is-disabled', disabled);
@@ -537,6 +542,7 @@ function showCameraPanel() {
     elements.cameraPanel.hidden = false;
     elements.appHeader.setAttribute('inert', '');
     elements.pageMain.setAttribute('inert', '');
+    elements.pageFooter?.setAttribute('inert', '');
     document.body.classList.add('camera-open');
     window.requestAnimationFrame(() => elements.cameraPanel.focus());
 }
@@ -545,6 +551,7 @@ function hideCameraPanel() {
     elements.cameraPanel.hidden = true;
     elements.appHeader.removeAttribute('inert');
     elements.pageMain.removeAttribute('inert');
+    elements.pageFooter?.removeAttribute('inert');
     document.body.classList.remove('camera-open');
 }
 
@@ -574,6 +581,7 @@ function configureCameraAvailability() {
     const secure = window.isSecureContext;
     const supported = Boolean(navigator.mediaDevices?.getUserMedia);
     elements.openCamera.hidden = !(secure && supported);
+    if (elements.heroCamera) elements.heroCamera.hidden = !(secure && supported);
     elements.cameraAvailabilityNote.classList.toggle('warning', !(secure && supported));
 
     if (!secure) {
@@ -3270,6 +3278,12 @@ elements.analyze.addEventListener('click', () => {
 elements.openCamera.addEventListener('click', () => {
     void requestCamera();
 });
+
+elements.heroCamera?.addEventListener('click', () => {
+    void requestCamera();
+});
+
+elements.heroPhoto?.addEventListener('click', () => elements.input.click());
 
 elements.reopenCameraButton.addEventListener('click', () => {
     void requestCamera();

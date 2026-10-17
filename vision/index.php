@@ -23,15 +23,10 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
 </head>
 <body class="vision-page">
 <header class="app-header">
-    <div class="brand-lockup" aria-label="CropSCOUT Vision">
-        <span class="brand-mark" aria-hidden="true">
-            <svg viewBox="0 0 40 40" role="img">
-                <path d="M20 30V16m0 4c-5.5 0-9.5-3.5-9.5-8.5 5.5 0 9.5 3.5 9.5 8.5Zm0-4c5.5 0 9.5-3.5 9.5-8.5-5.5 0-9.5 3.5-9.5 8.5Z"/>
-            </svg>
-        </span>
-        <span class="brand-name">Crop<span>SCOUT</span></span>
-        <span class="brand-mode">vision / public beta</span>
-    </div>
+    <a class="brand-lockup" href="/" aria-label="CropSCOUT home">
+        <span class="brand-name">CropSCOUT</span>
+        <span class="brand-mode">Live</span>
+    </a>
 
     <div class="header-actions">
         <div class="model-state" id="model-state" aria-live="polite">
@@ -42,12 +37,40 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
     </div>
 </header>
 
-<main class="screening-grid">
+<main class="page-main">
+<section class="hero" aria-labelledby="page-title">
+    <div class="hero-copy">
+        <h1 id="page-title">Live screening</h1>
+        <p class="hero-lede">Point your camera at one leaf and see the disease screening live. It runs on your device: the frames are never uploaded.</p>
+        <p class="hero-scope">Checks tomato, cucumber, apple and lemon, leaf or fruit: first which crop and part it is, then the common diseases and problems of that part.</p>
+        <div class="hero-actions">
+            <button class="hero-camera-button" id="hero-camera-button" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h3l1.4-2h7.2l1.4 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+                Live camera
+            </button>
+            <button class="hero-photo-button" id="hero-photo-button" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="m4 16 4.5-4.5 3.5 3.5 2.5-2.5L20 18"/><circle cx="15.5" cy="9.5" r="1.4"/></svg>
+                Choose a photo
+            </button>
+        </div>
+        <p class="hero-note">Screening support, not a laboratory diagnosis or a spray recommendation. Confirm uncertain or severe symptoms with an agronomist before treating.</p>
+    </div>
+    <aside class="good-result" aria-labelledby="good-result-title">
+        <h2 id="good-result-title">For a good result</h2>
+        <ul>
+            <li>One leaf fills most of the square.</li>
+            <li>Daylight, no flash, and the spots in sharp focus.</li>
+            <li>If the problem is underneath, show that side too.</li>
+        </ul>
+    </aside>
+</section>
+
+<div class="screening-grid">
     <section class="panel capture-panel" aria-labelledby="capture-title">
         <p class="section-number">01 / capture</p>
         <div class="panel-intro">
-            <h1 id="capture-title">Show us the crop</h1>
-            <p>Photograph one fruit or one leaf in daylight. Keep it sharp and let it fill most of the frame.</p>
+            <h2 id="capture-title">Show us the crop</h2>
+            <p>Use the live camera, or photograph one fruit or one leaf in daylight.</p>
         </div>
         <p class="experimental-notice"><strong>Experimental screening.</strong> Confirm the crop and leaf/fruit type before acting. Fruit photographed on the plant, yellowing cucumber leaves, whole tomato seedlings and tomato-fruit rots are still misidentified or not covered. This is not a diagnosis or a pesticide recommendation.</p>
 
@@ -312,7 +335,31 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
             </section>
         </article>
     </section>
+</div>
 </main>
+
+<footer class="site-footer">
+    <div class="footer-inner">
+        <div class="footer-brand">
+            <p class="footer-wordmark">CropSCOUT</p>
+            <p>Field robotics, built around the farmer.</p>
+        </div>
+        <div class="footer-columns">
+            <div>
+                <h2>Privacy</h2>
+                <p>Camera frames and photos are analysed in this browser and never leave the device.</p>
+            </div>
+            <div>
+                <h2>Screening</h2>
+                <p>Screening support, not a laboratory diagnosis or a spray recommendation.</p>
+            </div>
+            <div>
+                <h2>Connect</h2>
+                <p><a href="/">crop-scout.com</a></p>
+            </div>
+        </div>
+    </div>
+</footer>
 
 <section
     class="camera-panel"
