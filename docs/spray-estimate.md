@@ -23,35 +23,50 @@ rule for the label (spray-rules.json)
 
 ## Severity
 
-Severity is the share of leaf pixels in the analysed square that look like lesions. It is computed on the same 224 px RGB input the models see, so it costs no extra decoding.
+Severity is the share of leaf pixels in the analysed square that look like lesions. It is computed on the same 224 px RGB input the models see, so it costs no extra decoding, and it was calibrated on the labelled field leaves in `data/processed/classifier` (see below).
 
 | Pixel class | Rule (OpenCV HSV scale: H 0–180, S and V 0–255) |
 |---|---|
-| green (healthy tissue) | H 35–85, S > 60, V > 50 |
-| lesion (yellow, orange, brown spots) | H 5–35, S > 60, V > 40 |
-| lesion (dark necrotic) | V < 60, S > 30 |
-| other (background, grey, white) | everything else; ignored |
+| green (leaf tissue) | H 35–85, S > 40, V > 50 — shaded dark green counts as leaf |
+| brown (yellow, orange, brown spots) | H 5–35, S > 60, V > 30 |
+| brown (dark necrotic) | 20 ≤ V < 85, S > 30, hue brown or red (H < 35 or H > 150) |
+| other (background, grey, white, sky, deep shadow) | everything else; ignored |
+
+A brown pixel is a **lesion only if it lies next to leaf tissue**: within 8 % of the square's side of a green pixel, grown once so a large patch bordered by green still counts in full. Soil, pots and bark away from any leaf no longer count. Thresholds live in `spray-rules.json` under `severity.colour` and `severity.adjacency_radius`, and both implementations read them from there.
 
 ```
 lesion_fraction = lesion / (green + lesion)
-leaf_cover      = (green + lesion) / all pixels
+leaf_cover      = (green + lesion) / all pixels      (below 8 % → severity unknown, base dose)
 ```
 
-| Band | lesion_fraction | multiplier |
-|---|---|---|
-| low | ≤ 10 % | 0.6 |
-| medium | 10–30 % | 1.0 |
-| high | ≥ 30 % | 1.4 |
-| unknown | leaf_cover < 15 % | 1.0 |
+The dose factor is continuous, not stepped:
 
-Example: early blight, base 30 mL, high severity → 42 mL, which at 10 mL/s is 4.2 s of pump time.
+```
+multiplier = 0.5 + (1.5 − 0.5) × clamp(lesion_fraction / 0.40, 0, 1)
+```
+
+So a confirmed disease on a leaf with almost no visible lesion area gets half the base dose, and the full 1.5× from 40 % lesion area upwards. The words *low / medium / high* (≤ 10 %, 10–30 %, ≥ 30 %) are only used for display. Live, the lesion fraction is averaged over frames with the same 62 % / 38 % weight as the model scores, and losing the leaf keeps the last value instead of pulling it to zero.
+
+### Calibration
+
+`live/eval_severity.py` runs the estimate over the labelled field leaves and reports, per class, the distribution of the lesion fraction and how well it separates healthy from diseased leaves (AUC). The thresholds above were chosen with a sweep on the `val` split; `test` was looked at once afterwards.
+
+| | before | after |
+|---|---|---|
+| healthy vs lesion-disease AUC (val) | 0.73 | 0.87 |
+| healthy leaves scored above 10 % lesion area | 39 % | 19 % |
+| leaves unmeasurable (too little leaf found) | — | 2 % |
+
+Two failure modes were fixed: dark green shadows and veins on healthy leaves were counted as lesions, and brown soil around the leaf was counted as lesions. Mosaic virus separates poorly (it mottles rather than spots), which does not matter: a virus never gets a dose.
+
+**Limits.** Grey dead tissue (late blight) and sun-bleached patches are not counted. In the Python demo press `m` to see the mask (red = lesion, green = leaf).
 
 ## Spray percentage
 
 The headline number is a percentage of the maximum dose, so it works as a pump duty setting:
 
 ```
-percent = dose_ml / units.max_dose_ml × 100        (max_dose_ml = 56: the largest rule, late blight 40 mL × 1.4)
+percent = dose_ml / units.max_dose_ml × 100        (max_dose_ml = 60: the largest rule, late blight 40 mL × 1.5)
 ```
 
 | Situation | Shown |
@@ -59,9 +74,10 @@ percent = dose_ml / units.max_dose_ml × 100        (max_dose_ml = 56: the large
 | nothing in the square, not a tomato, or verdict not confirmed | SPRAY 0% |
 | healthy leaf, or a non-infectious disorder | SPRAY 0% |
 | virus | SPRAY 0%, remove the plant |
-| early blight, low severity | SPRAY 32% (18 mL) |
-| early blight, high severity | SPRAY 75% (42 mL) |
-| late blight, high severity | SPRAY 100% (56 mL) |
+| early blight, 5 % lesion area | SPRAY 31% (18.8 mL) |
+| early blight, 20 % lesion area | SPRAY 50% (30 mL) |
+| early blight, 40 % or more | SPRAY 75% (45 mL) |
+| late blight, 40 % or more | SPRAY 100% (60 mL) |
 
 The live demo always shows this line at the bottom of the window. In the browser app the camera view has a **SPRAY** readout (bottom-left, always visible while the camera runs): `SPRAY 0%` with the reason while nothing is confirmed, then the percentage with the dose and pump time once the label is held by the frame vote. With the leaf finder on, it follows the leaf that needs the most spray. The result card repeats it in a Spray estimate section, and the live label appends `spray 75%`.
 
@@ -83,6 +99,7 @@ The `dose_ml` numbers in `spray-rules.json` are illustrative defaults for a hand
 live/run.sh                                           # live: the SPRAY % line sits at the bottom of the window
 .venv/bin/python -m unittest live/test_spray.py       # Python tests
 node --test tests/spray.test.mjs                      # browser-module tests, same numbers
+.venv/bin/python live/eval_severity.py --split val     # calibration report on the labelled field leaves (needs the datasets)
 ```
 
 In the browser app the result card gets a **Spray estimate** section, and the live chip appends `spray 75%`, `spray 0%` or `spray 0%, remove plant` to a confirmed label.

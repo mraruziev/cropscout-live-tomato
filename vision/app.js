@@ -1,5 +1,5 @@
 import * as ort from './vendor/ort.wasm.bundle.min.mjs';
-import { decideSpray, estimateSeverityFromTensor, loadSprayRules, sprayChipText, spraySummary } from './spray.js';
+import { decideSpray, estimateSeverityFromTensor, loadSprayRules, smoothSeverity, sprayChipText, spraySummary } from './spray.js';
 
 // Static mode (<html data-mode="static">, produced by tools/build_static.py): no PHP.
 // The models and their metadata are plain files under models/, and the field-note
@@ -553,6 +553,7 @@ function resetLiveConditionTracking(track, family = '', route = '') {
     track.votes = [];
     track.shown = null;
     track.conditionDisplayReady = false;
+    track.severity = null;   // live lesion-area average, see smoothSeverity
 }
 
 // Records this frame's gated outcome for one track and returns what it may
@@ -1091,6 +1092,8 @@ async function assessLiveTrack(runtime, track, tensor, isCurrent, onCheckingCond
             isCurrent,
             smooth: (probabilities, route, modelId) =>
                 smoothLiveConditionProbabilities(track, probabilities, family, route, modelId),
+            // The spray dose follows a frame average of the lesion area, like the scores.
+            smoothSeverity: (raw) => smoothSeverity(track.severity ??= {}, raw, runtime.sprayRules),
         }
     );
     if (!evaluated) return null;
@@ -2745,7 +2748,7 @@ async function assessConditionRoute(
     runtime,
     identity,
     input,
-    { live = false, isCurrent = () => true, smooth = null } = {}
+    { live = false, isCurrent = () => true, smooth = null, smoothSeverity: smoothSeverityFn = null } = {}
 ) {
     const { crop, organ } = identity;
     const family = `${crop}_${organ}`;
@@ -2812,13 +2815,13 @@ async function assessConditionRoute(
         selected = considerSpecialist ? specialist : base;
     }
 
-    return Object.freeze({ route, ...selected, spray: sprayEstimate(runtime, selected, input) });
+    return Object.freeze({ route, ...selected, spray: sprayEstimate(runtime, selected, input, smoothSeverityFn) });
 }
 
 // How much to spray for this verdict. Only a verdict that passed every
 // safeguard gets a dose; healthy, non-infectious and viral conditions get none.
 // Severity is the share of lesion-coloured leaf pixels in the 224 px input.
-function sprayEstimate(runtime, evaluation, input) {
+function sprayEstimate(runtime, evaluation, input, smoothSeverityFn = null) {
     const rules = runtime.sprayRules;
     const assessment = evaluation?.assessment;
     if (!rules || !assessment) return null;
@@ -2826,9 +2829,10 @@ function sprayEstimate(runtime, evaluation, input) {
     const certain = assessment.result.certainty === 'high-confidence screen'
         || assessment.result.certainty === 'healthy-like pattern';
     const data = input?.data;
-    const severity = data && data.length === 3 * IMAGE_SIZE * IMAGE_SIZE
+    let severity = data && data.length === 3 * IMAGE_SIZE * IMAGE_SIZE
         ? estimateSeverityFromTensor(data, rules, IMAGE_SIZE)
         : null;
+    if (severity && smoothSeverityFn) severity = smoothSeverityFn(severity);
     return decideSpray(rules, top?.condition.label ?? null, certain, severity);
 }
 

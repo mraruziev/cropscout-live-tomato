@@ -14,12 +14,20 @@ GREY = (128, 128, 128)    # background
 
 
 def leaf(lesion_fraction: float, cover: float = 1.0) -> np.ndarray:
+    """A leaf of `cover` of the square with brown stripes (8 px wide, every 32 px as a base
+    unit) covering `lesion_fraction` of it, so lesions always touch leaf tissue."""
     img = np.zeros((224, 224, 3), np.uint8)
     img[:] = GREY
     n = int(224 * cover)
     img[:n, :] = GREEN
-    k = int(224 * lesion_fraction)
-    img[:n, :k] = BROWN
+    stripe = 8
+    period = 32
+    stripes_per_period = lesion_fraction * period / stripe  # 0..4
+    for start in range(0, 224, period):
+        k = int(round(stripes_per_period))
+        for j in range(k):
+            x0 = start + j * stripe
+            img[:n, x0:x0 + stripe] = BROWN
     return img
 
 
@@ -31,18 +39,42 @@ class SeverityTests(unittest.TestCase):
         self.assertEqual(s.band, "low")
         self.assertLess(s.lesion_fraction, 0.01)
 
-    def test_brown_patches_raise_severity(self):
-        s = estimate_severity(leaf(0.4), self.rules)
+    def test_brown_stripes_raise_severity(self):
+        s = estimate_severity(leaf(0.5), self.rules)
         self.assertEqual(s.band, "high")
-        self.assertAlmostEqual(s.lesion_fraction, 0.4, delta=0.03)
+        self.assertAlmostEqual(s.lesion_fraction, 0.5, delta=0.03)
 
     def test_medium_band(self):
-        s = estimate_severity(leaf(0.2), self.rules)
+        s = estimate_severity(leaf(0.25), self.rules)
         self.assertEqual(s.band, "medium")
 
     def test_no_leaf_is_unknown(self):
         s = estimate_severity(leaf(0.0, cover=0.05), self.rules)
         self.assertEqual(s.band, "unknown")
+
+    def test_brown_far_from_any_leaf_is_not_a_lesion(self):
+        img = leaf(0.0, cover=0.5)              # top half leaf, bottom half grey
+        img[160:, :] = BROWN                     # "soil" 48 px below the leaf, past the 18 px radius
+        s = estimate_severity(img, self.rules)
+        self.assertLess(s.lesion_fraction, 0.01)
+
+    def test_shaded_green_is_leaf_not_lesion(self):
+        img = leaf(0.0)
+        img[:, :112] = (20, 70, 20)              # dark green shadow, BGR
+        s = estimate_severity(img, self.rules)
+        self.assertLess(s.lesion_fraction, 0.01)
+        self.assertGreater(s.leaf_cover, 0.9)
+
+    def test_live_smoothing_follows_frames(self):
+        from spray import SeveritySmoother
+        sm = SeveritySmoother(self.rules)
+        a = sm.push(Severity(0.0, 0.9, "low"))
+        b = sm.push(Severity(0.5, 0.9, "high"))
+        self.assertAlmostEqual(a.lesion_fraction, 0.0)
+        self.assertAlmostEqual(b.lesion_fraction, 0.62 * 0.5, places=6)
+        c = sm.push(Severity(0.0, 0.0, "unknown"))     # losing the leaf keeps the last value
+        self.assertAlmostEqual(c.lesion_fraction, b.lesion_fraction)
+        self.assertEqual(c.band, "unknown")
 
 
 class DecisionTests(unittest.TestCase):
@@ -66,9 +98,21 @@ class DecisionTests(unittest.TestCase):
         self.assertGreater(hi.dose_ml, lo.dose_ml)
         self.assertGreater(lo.dose_ml, 0)
         self.assertAlmostEqual(hi.spray_seconds, hi.dose_ml / self.rules["units"]["pump_ml_per_second"], places=1)
-        self.assertEqual(hi.percent, 75)   # 42 mL of a 56 mL maximum
-        self.assertEqual(lo.percent, 32)   # 18 mL of 56
+        self.assertEqual(lo.dose_ml, 18.8)  # 30 x (0.5 + 0.05/0.40)
+        self.assertEqual(hi.dose_ml, 45.0)  # 30 x 1.5 (0.5 lesion area is past full_at)
+        self.assertEqual(lo.percent, 31)    # 18.8 of a 60 mL maximum
+        self.assertEqual(hi.percent, 75)    # 45 of 60
         self.assertTrue(hi.summary().startswith("SPRAY 75%"))
+
+    def test_dose_is_continuous_in_lesion_area(self):
+        doses = [decide(self.rules, "Tomato_leaf_early_blight", True, Severity(f, 0.9, "medium")).dose_ml
+                 for f in (0.10, 0.15, 0.20, 0.25)]
+        self.assertEqual(doses, sorted(doses))
+        self.assertEqual(len(set(doses)), 4)
+
+    def test_unknown_severity_uses_base_dose(self):
+        d = decide(self.rules, "Tomato_leaf_early_blight", True, Severity(0.0, 0.02, "unknown"))
+        self.assertEqual(d.dose_ml, 30.0)
 
     def test_largest_rule_is_100_percent(self):
         hi = Severity(0.5, 0.9, "high")

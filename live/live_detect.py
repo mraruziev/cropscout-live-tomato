@@ -36,7 +36,7 @@ import numpy as np
 import onnxruntime as ort
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from spray import decide, estimate_severity, lesion_overlay, load_rules  # noqa: E402
+from spray import SeveritySmoother, decide, estimate_severity, lesion_overlay, load_rules  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 IMAGE_SIZE = 224
@@ -254,6 +254,7 @@ def main() -> None:
 
     pipe = Pipeline(model_dir, Path(args.meta), args.threads)
     rules = load_rules(args.rules)
+    severity_ema = SeveritySmoother(rules)
     show_mask = False
     ensure_camera_permission()
     cap = open_camera(args.camera, args.width, args.height)
@@ -293,6 +294,7 @@ def main() -> None:
 
             if fam != last_family:
                 cond_ema.reset()
+                severity_ema.reset()
                 agree_key, agree_n = None, 0
                 last_family = fam
 
@@ -309,7 +311,7 @@ def main() -> None:
                 verdict = None
                 status = "uncertain"
                 key = f"{fam}|nospecialist"
-            severity = estimate_severity(last_square, rules)
+            severity = severity_ema.push(estimate_severity(last_square, rules))
             ms = (time.perf_counter() - t0) * 1000
 
             # 2-frame consensus before showing a verdict (an uncertain result resets it)
@@ -366,7 +368,7 @@ def main() -> None:
             h0, w0 = frame.shape[:2]
             s0 = min(h0, w0)
             y0, x0 = (h0 - s0) // 2, (w0 - s0) // 2
-            shown[y0:y0 + s0, x0:x0 + s0] = lesion_overlay(last_square)
+            shown[y0:y0 + s0, x0:x0 + s0] = lesion_overlay(last_square, rules=rules)
         draw(shown, state, float(np.mean(fps_hist)))
         cv2.imshow("CropSCOUT live (local)", shown)
         k = cv2.waitKey(1) & 0xFF
