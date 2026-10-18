@@ -19,18 +19,18 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
     <meta name="theme-color" content="#0b0e0c">
     <title>CropSCOUT Vision — camera AI subsystem</title>
     <link rel="canonical" href="https://crop-scout.com/vision/">
-    <link rel="icon" href="data:,">
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
     <link rel="stylesheet" href="styles.css?v=<?= rawurlencode($styleVersion) ?>">
     <script src="app.js?v=<?= rawurlencode($scriptVersion) ?>" type="module"></script>
 </head>
 <body class="vision-page">
 <header class="app-header">
     <a class="brand-lockup" href="/" aria-label="CropSCOUT home">
-        <span class="brand-mark" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M4 7.5h3l1.4-2h7.2l1.4 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/><path d="M12 9.5v-1M12 17.5v-1M8.5 13h-1M16.5 13h-1"/></svg>
-        </span>
+        <img class="brand-mark" src="assets/logo-mark.svg" alt="" width="44" height="44">
         <span class="brand-text">
-            <span class="brand-name">CropSCOUT</span>
+            <span class="brand-name">Crop<span>SCOUT</span></span>
             <span class="brand-mode">Vision · camera AI</span>
         </span>
     </a>
@@ -55,10 +55,9 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
 <main class="page-main">
 <section class="hero" aria-labelledby="page-title">
     <div class="hero-copy">
-        <p class="hero-eyebrow"><span class="rec-dot" aria-hidden="true"></span>Onboard perception · live screening</p>
-        <h1 id="page-title">Camera AI subsystem</h1>
+        <p class="hero-eyebrow"><span class="rec-dot" aria-hidden="true"></span>Camera AI subsystem · live screening</p>
+        <h1 id="page-title">Scout every leaf. <span class="hero-accent">Catch disease early.</span></h1>
         <p class="hero-lede">This is the vision stage of the CropSCOUT rover. The camera feed is read a few times a second, each frame goes through the crop gate, the condition model and four safeguards, and a label is shown only when several frames agree.</p>
-        <p class="hero-scope" id="hero-scope">Tomato focus: the gate decides leaf, fruit or neither, and the crop is taken as tomato. Tomato leaf conditions: healthy, early blight, late blight, septoria, bacterial spot, black spot, target spot, leaf mold, mosaic virus, yellow leaf curl virus and spider mite. Switch the crop focus to ALL to let the gate also tell apple, cucumber and lemon apart.</p>
         <div class="hero-actions">
             <button class="hero-camera-button" id="hero-camera-button" type="button">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h3l1.4-2h7.2l1.4 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
@@ -68,12 +67,33 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
                 <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="m4 16 4.5-4.5 3.5 3.5 2.5-2.5L20 18"/><circle cx="15.5" cy="9.5" r="1.4"/></svg>
                 Analyse a still
             </button>
-            <a class="hero-flag" id="crop-focus-toggle" href="?crop=all">
-                <span id="crop-focus-state">Crop focus: TOMATO</span> <span aria-hidden="true">·</span> toggle
-            </a>
-            <a class="hero-flag" id="leaf-finder-toggle" href="?detector=1">
-                <span id="leaf-finder-state">Leaf finder: OFF</span> <span aria-hidden="true">·</span> toggle
-            </a>
+        </div>
+        <div class="hero-coverage">
+            <p class="hero-scope" id="hero-scope">Tomato focus: the gate decides leaf, fruit or neither, and the crop is taken as tomato. Switch the crop focus to ALL to let the gate also tell apple, cucumber and lemon apart.</p>
+            <p class="chips-label" id="chips-label">Tomato leaf conditions</p>
+            <ul class="condition-chips" aria-labelledby="chips-label">
+                <li class="is-healthy">Healthy</li>
+                <li>Early blight</li>
+                <li>Late blight</li>
+                <li>Septoria</li>
+                <li>Bacterial spot</li>
+                <li>Black spot</li>
+                <li>Target spot</li>
+                <li>Leaf mold</li>
+                <li>Mosaic virus</li>
+                <li>Yellow leaf curl virus</li>
+                <li>Spider mite</li>
+            </ul>
+            <div class="hero-flags" role="group" aria-label="Pipeline options">
+                <a class="hero-flag" id="crop-focus-toggle" href="?crop=all" title="Switch the crop focus">
+                    <span class="flag-label">Crop focus</span>
+                    <span class="flag-value" id="crop-focus-state">TOMATO</span>
+                </a>
+                <a class="hero-flag" id="leaf-finder-toggle" href="?detector=1" title="Turn the leaf finder on or off">
+                    <span class="flag-label">Leaf finder</span>
+                    <span class="flag-value" id="leaf-finder-state">OFF</span>
+                </a>
+            </div>
         </div>
         <p class="hero-note">Screening support, not a laboratory diagnosis or a spray recommendation. Confirm uncertain or severe symptoms with an agronomist before treating.</p>
     </div>
@@ -86,6 +106,11 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
             <li><span>04</span><strong>Safeguards</strong><small>confidence · margin · family mass · healthy separation</small></li>
             <li><span>05</span><strong>Frame vote</strong><small>3 of last 4 agree to show · withdrawn under 2</small></li>
         </ol>
+        <dl class="pipeline-stats">
+            <div><dt>Input</dt><dd>224 px</dd></div>
+            <div><dt>Vote</dt><dd>3 of 4</dd></div>
+            <div><dt>Frames sent</dt><dd>0</dd></div>
+        </dl>
         <p class="pipeline-foot">Frames are processed in browser memory and never leave the device.</p>
     </aside>
 </section>
@@ -218,10 +243,15 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
         </div>
 
         <div class="result-empty" id="result-empty">
-            <span class="scan-glyph" aria-hidden="true"></span>
+            <span class="scan-glyph" aria-hidden="true"><img src="assets/logo-mark.svg" alt="" width="64" height="64"></span>
             <p class="eyebrow">awaiting frame</p>
             <h2 id="result-heading">Output will appear here</h2>
-            <p>Load a tomato, cucumber, apple or lemon frame. Inference runs in this browser; the image is not sent to the server.</p>
+            <p class="result-empty-lede">Load a tomato, cucumber, apple or lemon frame. Inference runs in this browser; the image is not sent to the server.</p>
+            <ol class="empty-steps">
+                <li><span>1</span><strong>Frame one leaf</strong><small>fill the square · daylight · sharp focus</small></li>
+                <li><span>2</span><strong>Hold steady</strong><small>3 of the last 4 frames must agree</small></li>
+                <li><span>3</span><strong>Read the result</strong><small>condition · confidence · spray estimate</small></li>
+            </ol>
         </div>
 
         <div class="result-busy" id="result-busy" hidden aria-live="polite">
@@ -380,7 +410,7 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
 <footer class="site-footer">
     <div class="footer-inner">
         <div class="footer-brand">
-            <p class="footer-wordmark">CropSCOUT <span>Vision</span></p>
+            <p class="footer-wordmark"><img src="assets/logo-mark.svg" alt="" width="44" height="44">Crop<span>SCOUT</span> <small>Vision</small></p>
             <p>Camera AI subsystem of the CropSCOUT field robot. Field robotics, built around the farmer.</p>
         </div>
         <div class="footer-columns">
@@ -497,12 +527,14 @@ function flagUrl(changes) {
 const finderToggle = document.getElementById('leaf-finder-toggle');
 if (finderToggle) {
     finderToggle.href = flagUrl({ detector: detectorRequested ? null : '1' });
-    document.getElementById('leaf-finder-state').textContent = detectorRequested ? 'Leaf finder: ON' : 'Leaf finder: OFF';
+    finderToggle.dataset.on = String(detectorRequested);
+    document.getElementById('leaf-finder-state').textContent = detectorRequested ? 'ON' : 'OFF';
 }
 const cropToggle = document.getElementById('crop-focus-toggle');
 if (cropToggle) {
     cropToggle.href = flagUrl({ crop: cropFocusAll ? null : 'all' });
-    document.getElementById('crop-focus-state').textContent = cropFocusAll ? 'Crop focus: ALL' : 'Crop focus: TOMATO';
+    cropToggle.dataset.on = String(cropFocusAll);
+    document.getElementById('crop-focus-state').textContent = cropFocusAll ? 'ALL' : 'TOMATO';
 }
 const hudCrop = document.getElementById('hud-crop');
 if (hudCrop) hudCrop.textContent = cropFocusAll ? 'ALL' : 'TOMATO';

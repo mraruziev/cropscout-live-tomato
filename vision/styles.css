@@ -158,37 +158,41 @@ a:focus-visible {
     text-decoration: none;
 }
 
+/* The leaf-lens mark (assets/logo-mark.svg): a leaf with a camera lens for a pupil. */
 .brand-mark {
-    width: 2.6rem;
-    height: 2.6rem;
+    width: 2.75rem;
+    height: 2.75rem;
     flex: 0 0 auto;
-    display: grid;
-    place-items: center;
-    border: 1px solid var(--line-strong);
-    border-radius: var(--radius);
-    background: linear-gradient(160deg, rgba(62, 207, 111, 0.16), rgba(62, 207, 111, 0.02));
+    display: block;
+    filter: drop-shadow(0 0 0.7rem rgba(62, 207, 111, 0.22));
+    transition: transform 200ms ease;
 }
 
-.brand-mark svg {
-    width: 1.5rem;
-    height: 1.5rem;
-    fill: none;
-    stroke: var(--green-bright);
-    stroke-width: 1.7;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+.brand-lockup:hover .brand-mark {
+    transform: rotate(-6deg) scale(1.04);
 }
 
 .brand-text {
     display: grid;
-    gap: 0.15rem;
+    gap: 0.2rem;
 }
 
 .brand-name {
-    font-weight: 800;
-    font-size: 1.1rem;
+    font-weight: 650;
+    font-size: 1.2rem;
     letter-spacing: -0.02em;
     line-height: 1;
+}
+
+/* "SCOUT" in the wordmark, header and footer alike. */
+.brand-name span,
+.footer-wordmark span {
+    background: linear-gradient(100deg, var(--green-bright), var(--green));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-weight: 850;
+    letter-spacing: 0;
 }
 
 .brand-mode {
@@ -336,10 +340,20 @@ a:focus-visible {
 
 .hero h1 {
     margin: 0.9rem 0 0;
-    font-size: clamp(2.2rem, 4.6vw, 3.6rem);
+    font-size: clamp(2.4rem, 5vw, 4rem);
     font-weight: 780;
     line-height: 1.02;
     letter-spacing: -0.035em;
+}
+
+.hero-accent {
+    display: block;
+    width: fit-content;
+    padding-bottom: 0.06em;
+    background: linear-gradient(100deg, var(--green-bright) 0%, var(--green) 55%, #34b8a2 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
 }
 
 .hero-lede {
@@ -350,12 +364,79 @@ a:focus-visible {
     line-height: 1.5;
 }
 
-.hero-scope {
+/* Coverage: what the condition model screens for, plus the two URL flags. */
+.hero-coverage {
     max-width: 46rem;
+    margin-top: 1.6rem;
+    padding: 1rem 1.1rem 1.05rem;
+    border: 1px solid var(--line);
+    border-radius: 0.8rem;
+    background: rgba(16, 21, 18, 0.66);
+}
+
+.hero-scope {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.55;
+}
+
+.chips-label {
     margin: 0.9rem 0 0;
     color: var(--text-muted);
-    font-size: 0.95rem;
-    line-height: 1.55;
+    font: 700 0.6rem/1 var(--mono);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.condition-chips {
+    margin: 0.55rem 0 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.condition-chips li {
+    padding: 0.34rem 0.62rem 0.34rem 0.55rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text-soft);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font: 600 0.7rem/1.2 var(--mono);
+    letter-spacing: 0.02em;
+}
+
+.condition-chips li::before {
+    content: "";
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: var(--gold);
+    opacity: 0.85;
+}
+
+.condition-chips li.is-healthy {
+    border-color: rgba(62, 207, 111, 0.45);
+    background: var(--green-tint);
+    color: var(--green-bright);
+}
+
+.condition-chips li.is-healthy::before {
+    background: var(--green-bright);
+}
+
+.hero-flags {
+    margin-top: 0.95rem;
+    padding-top: 0.9rem;
+    border-top: 1px dashed var(--line);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
 }
 
 .hero-actions {
@@ -421,18 +502,36 @@ a:focus-visible {
 }
 
 .hero-flag {
-    min-height: 3.2rem;
-    padding: 0.75rem 1rem;
-    border: 1px dashed var(--line-strong);
-    border-radius: var(--radius);
+    min-height: 2.4rem;
+    padding: 0.3rem 0.3rem 0.3rem 0.85rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: var(--surface);
     color: var(--text-muted);
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    font: 600 0.7rem/1 var(--mono);
-    letter-spacing: 0.08em;
+    gap: 0.7rem;
+    font: 600 0.66rem/1 var(--mono);
+    letter-spacing: 0.12em;
     text-decoration: none;
     text-transform: uppercase;
+    transition: border-color 150ms ease, color 150ms ease;
+}
+
+.flag-value {
+    min-width: 3.4rem;
+    padding: 0.45rem 0.65rem;
+    border-radius: 999px;
+    background: var(--surface-soft);
+    color: var(--text-soft);
+    text-align: center;
+    letter-spacing: 0.08em;
+    transition: background 150ms ease, color 150ms ease;
+}
+
+.hero-flag[data-on="true"] .flag-value {
+    background: var(--green);
+    color: #062a12;
 }
 
 .hero-flag:hover {
@@ -544,6 +643,42 @@ a:focus-visible {
     font: 0.68rem/1.4 var(--mono);
 }
 
+.pipeline-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.pipeline-stats {
+    margin: auto 0 0;
+    padding-top: 1.1rem;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.pipeline-stats > div {
+    padding: 0.7rem 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    display: grid;
+    gap: 0.4rem;
+}
+
+.pipeline-stats dt {
+    color: var(--text-muted);
+    font: 700 0.56rem/1 var(--mono);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.pipeline-stats dd {
+    margin: 0;
+    color: var(--green-bright);
+    font: 700 1.05rem/1 var(--mono);
+    letter-spacing: -0.01em;
+}
+
 .pipeline-foot {
     margin: 1rem 0 0;
     padding-top: 0.9rem;
@@ -602,7 +737,7 @@ a:focus-visible {
 }
 
 .panel-intro p,
-.result-empty > p:last-child,
+.result-empty > .result-empty-lede,
 .result-busy > p:last-child,
 .result-error > p:last-child,
 .result-lede {
@@ -1155,37 +1290,91 @@ a:focus-visible {
     letter-spacing: -0.03em;
 }
 
+/* The logo mark (it carries its own viewfinder corners) with a scan line passing over it. */
 .scan-glyph {
-    width: 5rem;
-    height: 5rem;
-    margin-bottom: 2rem;
+    width: 6rem;
+    height: 6rem;
+    margin-bottom: 1.6rem;
     position: relative;
-    border: 1px solid var(--line);
-    border-radius: 0.8rem;
-    background:
-        linear-gradient(var(--green), var(--green)) 0 0 / 1.2rem 1px no-repeat,
-        linear-gradient(var(--green), var(--green)) 0 0 / 1px 1.2rem no-repeat,
-        linear-gradient(var(--green), var(--green)) 100% 0 / 1.2rem 1px no-repeat,
-        linear-gradient(var(--green), var(--green)) 100% 0 / 1px 1.2rem no-repeat,
-        linear-gradient(var(--green), var(--green)) 0 100% / 1.2rem 1px no-repeat,
-        linear-gradient(var(--green), var(--green)) 0 100% / 1px 1.2rem no-repeat,
-        linear-gradient(var(--green), var(--green)) 100% 100% / 1.2rem 1px no-repeat,
-        linear-gradient(var(--green), var(--green)) 100% 100% / 1px 1.2rem no-repeat;
+    display: block;
+}
+
+.scan-glyph::before {
+    content: "";
+    position: absolute;
+    inset: 12%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(62, 207, 111, 0.22), transparent 70%);
+    filter: blur(0.6rem);
+}
+
+.scan-glyph img {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: block;
 }
 
 .scan-glyph::after {
     content: "";
     position: absolute;
-    inset: 50% 1rem auto;
-    height: 1px;
+    inset: 50% 0.9rem auto;
+    height: 2px;
+    border-radius: 2px;
     background: var(--green-bright);
-    box-shadow: 0 0 0.75rem rgba(62, 207, 111, 0.8);
+    box-shadow: 0 0 0.9rem rgba(62, 207, 111, 0.9);
+    opacity: 0.85;
     animation: glyph-sweep 2.4s ease-in-out infinite alternate;
 }
 
 @keyframes glyph-sweep {
-    from { top: 1rem; }
-    to { top: calc(100% - 1rem); }
+    from { top: 0.9rem; }
+    to { top: calc(100% - 0.9rem); }
+}
+
+.empty-steps {
+    width: 100%;
+    max-width: 34rem;
+    margin: 1.6rem 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.5rem;
+}
+
+.empty-steps li {
+    position: relative;
+    padding: 0.75rem 0.9rem 0.75rem 3.2rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    display: grid;
+    gap: 0.22rem;
+}
+
+.empty-steps li span {
+    position: absolute;
+    left: 0.85rem;
+    top: 50%;
+    width: 1.65rem;
+    height: 1.65rem;
+    transform: translateY(-50%);
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(62, 207, 111, 0.45);
+    border-radius: 50%;
+    background: var(--green-tint);
+    color: var(--green-bright);
+    font: 700 0.68rem/1 var(--mono);
+}
+
+.empty-steps strong {
+    font-size: 0.95rem;
+}
+
+.empty-steps small {
+    color: var(--text-muted);
+    font: 0.7rem/1.4 var(--mono);
 }
 
 .spinner {
@@ -1680,12 +1869,28 @@ a:focus-visible {
 
 .footer-wordmark {
     margin: 0;
-    font: 800 clamp(1.5rem, 3vw, 2rem)/1 var(--mono);
-    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    color: var(--text);
+    font: 650 clamp(1.5rem, 3vw, 2rem)/1 var(--display);
+    letter-spacing: -0.025em;
 }
 
-.footer-wordmark span {
+.footer-wordmark img {
+    width: 2.6rem;
+    height: 2.6rem;
+    margin-right: 0.7rem;
+}
+
+.footer-wordmark small {
+    margin-left: 0.7rem;
+    padding: 0.32rem 0.5rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 0.3rem;
     color: var(--green);
+    font: 700 0.62rem/1 var(--mono);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
 }
 
 .footer-brand p:last-child {
@@ -2291,10 +2496,18 @@ a:focus-visible {
     }
 
     .hero-camera-button,
-    .hero-photo-button,
-    .hero-flag {
+    .hero-photo-button {
         flex: 1 1 100%;
         justify-content: center;
+    }
+
+    .hero-flag {
+        flex: 1 1 auto;
+        justify-content: space-between;
+    }
+
+    .hero-coverage {
+        padding: 0.9rem;
     }
 
     .drop-zone,

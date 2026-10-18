@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="leaf" x1="13" y1="50" x2="50" y2="13" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1c9549"/>
+      <stop offset="0.5" stop-color="#3ecf6f"/>
+      <stop offset="1" stop-color="#a4f7c1"/>
+    </linearGradient>
+    <radialGradient id="lens" cx="30.6" cy="29.8" r="7.5" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff8f6b"/>
+      <stop offset="1" stop-color="#df361d"/>
+    </radialGradient>
+    <linearGradient id="tile" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#16231b"/>
+      <stop offset="1" stop-color="#070a08"/>
+    </linearGradient>
+  </defs>
+  <path d="M5 13V5h8M51 5h8v8M59 51v8h-8M13 59H5v-8" fill="none" stroke="#3ecf6f" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M16.5 47.5 L10.5 53.5" stroke="#23a456" stroke-width="3.4" stroke-linecap="round"/>
+  <path d="M16.5 47.5C14.5 28.5 28 14.5 50 13.5C49.5 35 36 49 16.5 47.5Z" fill="url(#leaf)"/>
+  <path d="M19.5 44.5Q31 33 47 16.5" fill="none" stroke="#d9ffe6" stroke-width="1.4" stroke-linecap="round" opacity="0.32"/>
+  <circle cx="32.4" cy="31.6" r="8.6" fill="#08130c"/>
+  <circle cx="32.4" cy="31.6" r="5.4" fill="url(#lens)"/>
+  <circle cx="30.4" cy="29.6" r="1.45" fill="#fff" opacity="0.92"/>
+</svg>

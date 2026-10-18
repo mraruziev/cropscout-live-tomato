@@ -5,7 +5,7 @@ Everything the models do is unchanged; only how files reach the browser differs.
 - vision/index.php becomes index.html: the PHP header is dropped, the two cache-busting
   hashes are computed here, and <html> gets data-mode="static" so app.js reads the models
   from models/ instead of model.php and hides the field-note panel (no backend to post to).
-- app.js, spray.js, spray-rules.json, styles.css and vendor/ are copied as they are.
+- app.js, spray.js, spray-rules.json, styles.css, vendor/ and assets/ (logo, favicons) are copied as they are.
 - vision/private/model-metadata.json and the .onnx models are copied to models/.
   Missing models are reported; the page then shows "could not be loaded" for them.
 
@@ -66,6 +66,7 @@ def main():
     for name in ("spray.js", "spray-rules.json"):
         shutil.copyfile(os.path.join(VISION, name), os.path.join(out, name))
     shutil.copytree(os.path.join(VISION, "vendor"), os.path.join(out, "vendor"))
+    shutil.copytree(os.path.join(VISION, "assets"), os.path.join(out, "assets"))
     with open(os.path.join(out, "index.html"), "w", encoding="utf-8", newline="\n") as f:
         f.write(render_index(os.path.join(VISION, "index.php"), sha12(style), sha12(script)))
     shutil.copyfile(os.path.join(VISION, "MODEL-NOTICE.md"), os.path.join(out, "MODEL-NOTICE.md"))
