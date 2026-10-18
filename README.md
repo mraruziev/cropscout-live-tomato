@@ -157,6 +157,7 @@ We looked for public tomato datasets taken **in the field**, because a live came
 | `docs/` | How it works, speed, dataset research, browser AI notes |
 | `tests/` | Fake-camera end-to-end tests, a real video played as the camera, spray-module tests |
 | `live/` | Local Python demo: OpenCV + ONNX Runtime live loop, spray estimate, image CLI |
+| `sim/` | A08 robot digital twin: MuJoCo greenhouse with the CAD robot, the CropSCOUT models deciding per plant, Mission Control dashboard, IoT telemetry (see `sim/README.md`) |
 | `tools/benchmark/` | Model speed scripts |
 | `tools/detector/` | Leaf finder: fetch the box datasets, build, train, export, evaluate |
 | `tools/classifier/` | Field leaf classifier: fetch the field sets, cut leaves with the finder, fine-tune, export, score on real photos |

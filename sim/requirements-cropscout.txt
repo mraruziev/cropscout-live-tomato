@@ -1,0 +1,3 @@
+# extra packages for --cropscout mode (the team's ONNX models in the loop)
+onnxruntime
+opencv-python

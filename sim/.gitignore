@@ -1,0 +1,9 @@
+.venv/
+out/
+__pycache__/
+*.pyc
+assets/
+leaf_photos/
+MUJOCO_LOG.TXT
+# the CAD skin (meshes/cad_*.stl) is committed; ASCII-to-binary caches are not
+meshes/*.bin.stl

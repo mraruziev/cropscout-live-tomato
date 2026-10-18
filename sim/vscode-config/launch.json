@@ -1,0 +1,104 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Mission Control (twin + camera/AI + IoT)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/mission_control.py",
+      "args": [
+        "--cropscout"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Mission Control (sim labels only)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/mission_control.py",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Mission Control + MQTT (test.mosquitto.org)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/mission_control.py",
+      "args": [
+        "--cropscout",
+        "--mqtt",
+        "test.mosquitto.org"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Live viewer (interactive)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/live_viewer.py",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Live viewer + CropSCOUT models (photos per plant)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/live_viewer.py",
+      "args": [
+        "--cropscout"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Live viewer + CropSCOUT models (webcam at each stop)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/live_viewer.py",
+      "args": [
+        "--cropscout",
+        "--source",
+        "webcam"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Render hero image + GIF + CropSCOUT (headless)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/render_demo.py",
+      "args": [
+        "out",
+        "--cropscout"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Live viewer (no camera)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/live_viewer.py",
+      "args": [
+        "--no-camera"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Render hero image + GIF (headless)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/render_demo.py",
+      "args": [
+        "out"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    }
+  ]
+}

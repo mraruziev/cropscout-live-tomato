@@ -1,0 +1,7 @@
+occurrence,x_mm,height_mm,lateral_z_mm,flow_x,flow_y,flow_z,height_in
+"SA01_A07_Frame_Payload-1/SA06_A08_Adjustable_Side_Spray_Head-5/A08_06_Brass_Side_Spray_Tip-1",180,1066.8,278,0,0,1,42
+"SA01_A07_Frame_Payload-1/SA06_A08_Adjustable_Side_Spray_Head-3/A08_06_Brass_Side_Spray_Tip-1",180,1524,-278,0,0,-1,60
+"SA01_A07_Frame_Payload-1/SA06_A08_Adjustable_Side_Spray_Head-4/A08_06_Brass_Side_Spray_Tip-1",180,609.6,278,0,0,1,24
+"SA01_A07_Frame_Payload-1/SA06_A08_Adjustable_Side_Spray_Head-1/A08_06_Brass_Side_Spray_Tip-1",180,609.6,-278,0,0,-1,24
+"SA01_A07_Frame_Payload-1/SA06_A08_Adjustable_Side_Spray_Head-2/A08_06_Brass_Side_Spray_Tip-1",180,1066.8,-278,0,0,-1,42
+"SA01_A07_Frame_Payload-1/SA06_A08_Adjustable_Side_Spray_Head-6/A08_06_Brass_Side_Spray_Tip-1",180,1524,278,0,0,1,60
