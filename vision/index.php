@@ -18,7 +18,6 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
     <meta name="referrer" content="same-origin">
     <meta name="theme-color" content="#0b0e0c">
     <title>CropSCOUT Vision — camera AI subsystem</title>
-    <link rel="canonical" href="https://crop-scout.com/vision/">
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
     <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
