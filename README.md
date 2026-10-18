@@ -49,6 +49,8 @@ scripts\serve-static.cmd               # Windows: serve http://localhost:8081/
 
 Any static host works for the result (the camera still needs HTTPS or localhost). Field notes and the team review page exist only in the PHP deployment. `.github/workflows/pages.yml` builds it on every push to `main` and publishes it to GitHub Pages (enable once under Settings → Pages → Source: GitHub Actions).
 
+Vercel: `scripts/deploy-vercel.sh` builds it and deploys it to production as project `cropscout-vision` (https://cropscout-vision.vercel.app). It runs the Vercel CLI through `npx`; log in once with `npx vercel@64.5.0 login`.
+
 ### Local Python demo (laptop webcam, no PHP)
 
 ```bash

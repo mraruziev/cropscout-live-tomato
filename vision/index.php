@@ -424,7 +424,7 @@ header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
             </div>
             <div>
                 <h2>Stack</h2>
-                <p>YOLO26 classifiers + leaf finder · ONNX · onnxruntime-web 1.29 · <a href="/">crop-scout.com</a></p>
+                <p>YOLO26 classifiers + leaf finder · ONNX · onnxruntime-web 1.29</p>
             </div>
         </div>
     </div>
